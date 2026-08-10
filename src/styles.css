@@ -121,7 +121,7 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--gold-light); ou
 
 .chapter-hangzhou { color: #fff; height: 100svh; min-height: 760px; overflow: hidden; position: relative; }
 .chapter-hangzhou > img { height: 100%; object-fit: cover; position: absolute; width: 100%; }
-.chapter-overlay { background: radial-gradient(circle at 50% 48%,rgba(5,22,39,.18),rgba(5,22,39,.48)); inset: 0; position: absolute; }
+.chapter-overlay { background: linear-gradient(90deg,rgba(3,17,30,.48),rgba(3,17,30,.3) 50%,rgba(3,17,30,.48)),linear-gradient(0deg,rgba(2,14,26,.56),transparent 58%); inset: 0; position: absolute; }
 .chapter-copy { left: 50%; position: absolute; text-align: center; top: 49%; transform: translate(-50%,-50%); width: min(900px,90%); }
 .chapter-copy.reveal { transform: translate(-50%,calc(-50% + 38px)); }
 .chapter-copy.reveal.is-visible { transform: translate(-50%,-50%); }

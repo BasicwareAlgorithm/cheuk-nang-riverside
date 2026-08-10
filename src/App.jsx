@@ -221,7 +221,7 @@ function Project() {
 function HangzhouChapter() {
   return (
     <section className="chapter-hangzhou">
-      <img src={asset(`${MATERIAL}/chapter-hangzhou-clean.jpg`)} alt="蓝金丝绸纹理" />
+      <img src={asset(`${MATERIAL}/hangzhou-city-clean.jpg`)} alt="杭州城市与水系航拍" />
       <div className="chapter-overlay" />
       <Reveal className="chapter-copy">
         <p>PART.2 · ENJOY HANGZHOU</p>
