@@ -175,7 +175,7 @@ function SectionTitle({ index, en, title, intro, light = false }) {
 function Heritage() {
   return (
     <section className="heritage" id="heritage">
-      <img className="heritage-bg" src={asset(`${MATERIAL}/chapter-world.jpg`)} alt="卓能集团品牌篇章" />
+      <img className="heritage-bg" src={asset(`${MATERIAL}/group-estate.jpeg`)} alt="卓能集团香港物业实景" />
       <div className="heritage-shade" />
       <div className="shell heritage-inner">
         <Reveal>

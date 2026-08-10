@@ -87,11 +87,11 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--gold-light); ou
 .section-title.is-light > div { color: rgba(255,255,255,.7); }
 
 .heritage { color: #fff; min-height: 900px; overflow: hidden; position: relative; }
-.heritage-bg { height: 100%; inset: 0; object-fit: cover; position: absolute; transform: scale(1.03); width: 100%; }
-.heritage-shade { background: linear-gradient(90deg,rgba(4,20,36,.88),rgba(4,20,36,.54) 60%,rgba(4,20,36,.25)); inset: 0; position: absolute; }
+.heritage-bg { filter: saturate(.72) contrast(1.06); height: 100%; inset: 0; object-fit: cover; object-position: center 43%; position: absolute; transform: scale(1.03); width: 100%; }
+.heritage-shade { background: linear-gradient(90deg,rgba(4,20,36,.94) 0%,rgba(4,20,36,.76) 44%,rgba(4,20,36,.42) 100%), linear-gradient(0deg,rgba(3,17,30,.42),transparent 50%); inset: 0; position: absolute; }
 .heritage-inner { align-items: center; display: grid; gap: 9vw; grid-template-columns: 1.05fr .95fr; min-height: 900px; padding: 130px 0; position: relative; z-index: 2; }
 .heritage-copy { font-family: "Songti SC", serif; font-size: 17px; letter-spacing: .09em; line-height: 2.1; margin-top: 48px; max-width: 620px; opacity: .82; }
-.heritage-stats { border-top: 1px solid var(--white-line); }
+.heritage-stats { backdrop-filter: blur(10px); background: rgba(4,20,36,.24); border-top: 1px solid var(--white-line); padding: 0 28px; }
 .heritage-stat { align-items: baseline; border-bottom: 1px solid var(--white-line); display: grid; grid-template-columns: 1fr auto; padding: 34px 0; }
 .heritage-stat strong { color: var(--gold-light); font-family: Georgia, serif; font-size: clamp(54px,5vw,82px); font-weight: 400; }
 .heritage-stat span { font-size: 11px; letter-spacing: .18em; opacity: .7; }
@@ -311,6 +311,8 @@ footer { background: #041526; color: #fff; padding: 46px 0; }
   .heritage-copy { font-size: 14px; margin-top: 35px; }
   .heritage-stat { padding: 21px 0; }
   .heritage-stat strong { font-size: 48px; }
+  .heritage-bg { object-position: 58% center; }
+  .heritage-stats { padding: 0 18px; }
   .chapter-sign { display: none; }
   .project { padding: 100px 0; }
   .project-copy h3 { font-size: 24px; }
