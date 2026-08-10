@@ -4,10 +4,6 @@ import {
   ArrowRight,
   Buildings,
   MapPin,
-  Pause,
-  Play,
-  SpeakerHigh,
-  SpeakerSlash,
   Train,
   X,
   List,
@@ -148,29 +144,9 @@ function Header({ solid, open, setOpen }) {
 }
 
 function Hero() {
-  const videoRef = useRef(null);
-  const [muted, setMuted] = useState(true);
-  const [playing, setPlaying] = useState(true);
-
-  const togglePlay = () => {
-    const video = videoRef.current;
-    if (!video) return;
-    if (video.paused) video.play(); else video.pause();
-    setPlaying(!video.paused);
-  };
-
-  const toggleMute = () => {
-    const video = videoRef.current;
-    if (!video) return;
-    video.muted = !video.muted;
-    setMuted(video.muted);
-  };
-
   return (
     <section className="hero" id="top">
-      <video ref={videoRef} className="hero-video" autoPlay muted loop playsInline preload="metadata" poster={asset(`${MATERIAL}/project-aerial.jpg`)}>
-        <source src={asset(`${MATERIAL}/project-film.mp4`)} type="video/mp4" />
-      </video>
+      <img className="hero-image" src={asset(`${MATERIAL}/river-view.jpeg`)} alt="卓能河畔轩水岸实景" fetchPriority="high" />
       <div className="hero-veil" />
       <div className="hero-line hero-line-a" /><div className="hero-line hero-line-b" />
       <div className="hero-copy">
@@ -179,11 +155,6 @@ function Hero() {
         <div className="hero-rule" />
         <h2>轻享杭州的丰盛生活</h2>
         <p className="hero-meta">临平崇贤 · 地铁口 · 公园旁 · 建面约65-138㎡百万级实景现房</p>
-      </div>
-      <div className="hero-controls">
-        <button type="button" onClick={togglePlay} aria-label={playing ? "暂停视频" : "播放视频"}>{playing ? <Pause size={17} /> : <Play size={17} />}</button>
-        <button type="button" onClick={toggleMute} aria-label={muted ? "打开声音" : "关闭声音"}>{muted ? <SpeakerSlash size={17} /> : <SpeakerHigh size={17} />}</button>
-        <span>PROJECT FILM · 00:44</span>
       </div>
       <a className="hero-scroll" href="#heritage"><span>SCROLL</span><ArrowDown size={17} /></a>
       <div className="hero-side-word" aria-hidden="true">RIVERSIDE</div>

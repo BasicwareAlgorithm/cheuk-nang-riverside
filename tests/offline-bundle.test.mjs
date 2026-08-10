@@ -9,7 +9,6 @@ const projectRoot = path.resolve(testDir, "..");
 const offlineHtmlPath = path.join(projectRoot, "卓能河畔轩-离线版.html");
 
 const expectedRuntimeAssets = [
-  "/assets/ppt/project-aerial.jpg",
   "/assets/ppt/project-film.mp4",
   "/assets/ppt/chapter-world.jpg",
   "/assets/ppt/community-aerial.jpg",
