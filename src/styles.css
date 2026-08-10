@@ -127,6 +127,8 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--gold-light); ou
 .chapter-hangzhou > img { height: 100%; object-fit: cover; position: absolute; width: 100%; }
 .chapter-overlay { background: rgba(6,26,47,.25); inset: 0; position: absolute; }
 .chapter-copy { left: 50%; position: absolute; text-align: center; top: 49%; transform: translate(-50%,-50%); width: min(900px,90%); }
+.chapter-copy.reveal { transform: translate(-50%,calc(-50% + 38px)); }
+.chapter-copy.reveal.is-visible { transform: translate(-50%,-50%); }
 .chapter-copy p { font-family: Georgia, serif; font-size: 10px; letter-spacing: .35em; opacity: .72; }
 .chapter-copy h2 { font-family: Georgia, "Songti SC", serif; font-size: clamp(48px,7vw,104px); font-weight: 400; letter-spacing: .08em; margin: 25px 0 32px; }
 .chapter-copy h2 span { font-family: "Songti SC", serif; font-size: 1.18em; font-style: italic; }
@@ -326,7 +328,7 @@ footer { background: #041526; color: #fff; padding: 46px 0; }
   .project-inset { height: 180px; width: 48%; }
   .project-ring { height: 190px; width: 190px; }
   .chapter-hangzhou { min-height: 680px; }
-  .chapter-copy h2 { font-size: 48px; }
+  .chapter-copy h2 { font-size: clamp(36px,11vw,48px); letter-spacing: .04em; line-height: 1.25; }
   .chapter-copy strong { font-size: 13px; }
   .location { padding: 100px 0; }
   .location-grid { margin-top: 52px; }
