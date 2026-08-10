@@ -221,7 +221,7 @@ function Project() {
 function HangzhouChapter() {
   return (
     <section className="chapter-hangzhou">
-      <img src={asset(`${MATERIAL}/chapter-hangzhou.jpg`)} alt="纵享杭州丰盈篇章" />
+      <img src={asset(`${MATERIAL}/chapter-hangzhou-clean.jpg`)} alt="蓝金丝绸纹理" />
       <div className="chapter-overlay" />
       <Reveal className="chapter-copy">
         <p>PART.2 · ENJOY HANGZHOU</p>
@@ -338,7 +338,7 @@ function Benefits() {
 function Contact() {
   return (
     <section className="contact" id="contact">
-      <img src={asset(`${MATERIAL}/contact.jpg`)} alt="卓能集团首献杭州项目联系画面" />
+      <img src={asset(`${MATERIAL}/contact-clean.jpg`)} alt="杭州城市天际线" />
       <div className="contact-shade" />
       <div className="shell contact-inner">
         <Reveal>
