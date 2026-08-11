@@ -11,6 +11,7 @@ import {
 
 const MATERIAL = "/assets/ppt";
 const DEPLOY_BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
+const BOOKING_FORM_URL = "https://cjp20zxantfi.jp.larksuite.com/share/base/form/shrjpEO9BfNS4pGvFnoZALkEJyc";
 
 function asset(path) {
   return globalThis.__OFFLINE_ASSETS__?.[path] ?? `${DEPLOY_BASE}${path}`;
@@ -138,6 +139,9 @@ function Header({ solid, open, setOpen }) {
             <span>{String(index + 1).padStart(2, "0")}</span><strong>{label}</strong><ArrowRight size={20} />
           </a>
         ))}
+        <a href={BOOKING_FORM_URL} target="_blank" rel="noreferrer" onClick={() => setOpen(false)}>
+          <span>08</span><strong>预约参观</strong><ArrowRight size={20} />
+        </a>
       </div>
     </header>
   );
@@ -347,8 +351,11 @@ function Contact() {
           <span>临平崇贤 · 地铁口 · 公园旁 · 建面约65-138㎡百万级实景现房</span>
         </Reveal>
         <Reveal className="contact-actions" delay={100}>
-          <p>品鉴热线</p><a href="tel:057186309988">0571 <strong>86309988</strong></a>
+          <p>品鉴热线</p><a className="phone-link" href="tel:057186309988">0571 <strong>86309988</strong></a>
           <span><MapPin size={17} />卓能河畔轩销售中心</span>
+          <a className="contact-booking" href={BOOKING_FORM_URL} target="_blank" rel="noreferrer">
+            <span>预约参观</span><ArrowRight size={18} />
+          </a>
         </Reveal>
       </div>
     </section>
@@ -399,6 +406,9 @@ export function App() {
       <div className="intro-screen" aria-hidden="true"><span /><p>CHEUK NANG RIVERSIDE</p><i /></div>
       <div className="page-progress" aria-hidden="true" />
       <Header solid={solid} open={menuOpen} setOpen={setMenuOpen} />
+      <a className="booking-float" href={BOOKING_FORM_URL} target="_blank" rel="noreferrer">
+        <small>PRIVATE VIEWING</small><span>预约参观</span><ArrowRight size={17} />
+      </a>
       <main>
         <Hero />
         <Heritage />
