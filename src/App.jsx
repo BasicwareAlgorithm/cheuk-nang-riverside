@@ -484,6 +484,8 @@ function ReservationAdmin() {
   const [message, setMessage] = useState("");
   const [records, setRecords] = useState([]);
   const [total, setTotal] = useState(0);
+  const [downloadStatus, setDownloadStatus] = useState("idle");
+  const [downloadMessage, setDownloadMessage] = useState("");
 
   const loadRecords = useCallback(async () => {
     setStatus("loading");
@@ -537,6 +539,39 @@ function ReservationAdmin() {
     setStatus("login");
   };
 
+  const handleDownload = async () => {
+    setDownloadStatus("downloading");
+    setDownloadMessage("");
+    try {
+      const response = await fetch("/api/admin/reservations.csv", { credentials: "same-origin" });
+      if (response.status === 401) {
+        setMessage("登录已失效，请重新输入管理员密码。");
+        setStatus("login");
+        setDownloadStatus("idle");
+        return;
+      }
+      if (!response.ok) {
+        const result = await response.json().catch(() => ({}));
+        throw new Error(result.message || "表格导出失败，请稍后重试。");
+      }
+
+      const blob = await response.blob();
+      const downloadUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.download = `卓能河畔轩预约客户-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.append(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(downloadUrl), 1_000);
+      setDownloadStatus("success");
+      setDownloadMessage("表格已开始下载，请查看浏览器下载列表。");
+    } catch (error) {
+      setDownloadStatus("error");
+      setDownloadMessage(error.message);
+    }
+  };
+
   if (["loading", "login", "submitting", "error"].includes(status)) {
     return (
       <main className="admin-login-page">
@@ -562,7 +597,10 @@ function ReservationAdmin() {
       <section className="admin-shell">
         <div className="admin-heading">
           <div><p>RESERVATION ADMIN</p><h1>预约客户记录</h1><span>提交时间为中国标准时间，最新记录排在最前。</span></div>
-          <div className="admin-actions"><button type="button" onClick={loadRecords}>刷新</button><a href="/api/admin/reservations.csv">下载 Excel 表格</a></div>
+          <div className="admin-action-area">
+            <div className="admin-actions"><button type="button" onClick={loadRecords}>刷新</button><button className="admin-download" type="button" onClick={handleDownload} disabled={downloadStatus === "downloading"}>{downloadStatus === "downloading" ? "正在导出…" : "下载 Excel 表格"}</button></div>
+            {downloadMessage && <p className={`admin-export-message is-${downloadStatus}`} role="status">{downloadMessage}</p>}
+          </div>
         </div>
         <div className="admin-table-card">
           <div className="admin-count"><strong>{total}</strong> 条预约记录</div>
