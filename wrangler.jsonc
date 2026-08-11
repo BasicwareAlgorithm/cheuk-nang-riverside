@@ -8,6 +8,14 @@
     "directory": "./dist/client",
     "not_found_handling": "single-page-application"
   },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "cheuk-nang-reservations",
+      "database_id": "37a6cd8c-aef1-4265-b259-24d51c885c88",
+      "migrations_dir": "migrations"
+    }
+  ],
   "observability": {
     "enabled": true
   }

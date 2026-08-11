@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ArrowDown,
   ArrowRight,
@@ -11,7 +11,8 @@ import {
 
 const MATERIAL = "/assets/ppt";
 const DEPLOY_BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
-const BOOKING_FORM_URL = "https://cjp20zxantfi.jp.larksuite.com/share/base/form/shrjpEO9BfNS4pGvFnoZALkEJyc";
+const RESERVATION_ENDPOINT = "/api/reservations";
+const PHONE_PATTERN = /^(?:\+?86[- ]?)?1[3-9]\d{9}$/;
 
 function asset(path) {
   return globalThis.__OFFLINE_ASSETS__?.[path] ?? `${DEPLOY_BASE}${path}`;
@@ -121,7 +122,7 @@ function Brand({ light = false }) {
   );
 }
 
-function Header({ solid, open, setOpen }) {
+function Header({ solid, open, setOpen, onBooking }) {
   return (
     <header className={`site-header ${solid || open ? "is-solid" : ""}`}>
       <Brand light={!solid && !open} />
@@ -139,9 +140,9 @@ function Header({ solid, open, setOpen }) {
             <span>{String(index + 1).padStart(2, "0")}</span><strong>{label}</strong><ArrowRight size={20} />
           </a>
         ))}
-        <a href={BOOKING_FORM_URL} target="_blank" rel="noreferrer" onClick={() => setOpen(false)}>
+        <button className="mobile-booking" type="button" onClick={() => { setOpen(false); onBooking(); }}>
           <span>08</span><strong>预约参观</strong><ArrowRight size={20} />
-        </a>
+        </button>
       </div>
     </header>
   );
@@ -339,7 +340,7 @@ function Benefits() {
   );
 }
 
-function Contact() {
+function Contact({ onBooking }) {
   return (
     <section className="contact" id="contact">
       <img src={asset(`${MATERIAL}/contact-clean.jpg`)} alt="杭州城市天际线" />
@@ -353,12 +354,126 @@ function Contact() {
         <Reveal className="contact-actions" delay={100}>
           <p>品鉴热线</p><a className="phone-link" href="tel:057186309988">0571 <strong>86309988</strong></a>
           <span><MapPin size={17} />卓能河畔轩销售中心</span>
-          <a className="contact-booking" href={BOOKING_FORM_URL} target="_blank" rel="noreferrer">
+          <button className="contact-booking" type="button" onClick={onBooking}>
             <span>预约参观</span><ArrowRight size={18} />
-          </a>
+          </button>
         </Reveal>
       </div>
     </section>
+  );
+}
+
+function BookingModal({ open, onClose }) {
+  const nameRef = useRef(null);
+  const [status, setStatus] = useState("idle");
+  const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    if (!open) return undefined;
+    setStatus("idle");
+    setMessage("");
+    const frame = requestAnimationFrame(() => nameRef.current?.focus());
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      cancelAnimationFrame(frame);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open, onClose]);
+
+  if (!open) return null;
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const data = new FormData(form);
+    const name = String(data.get("name") ?? "").trim();
+    const phone = String(data.get("phone") ?? "").trim();
+
+    if (name.length < 2 || name.length > 30) {
+      setStatus("error");
+      setMessage("请输入2至30个字符的姓名。");
+      return;
+    }
+    if (!PHONE_PATTERN.test(phone)) {
+      setStatus("error");
+      setMessage("请输入正确的中国大陆手机号码。");
+      return;
+    }
+
+    setStatus("submitting");
+    setMessage("");
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 12000);
+
+    try {
+      const response = await fetch(RESERVATION_ENDPOINT, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          name,
+          phone,
+          company: String(data.get("company") ?? ""),
+        }),
+        signal: controller.signal,
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.message || "提交失败，请稍后再试。");
+      form.reset();
+      setStatus("success");
+      setMessage("预约已提交，销售顾问会尽快与您联系。");
+    } catch (error) {
+      setStatus("error");
+      setMessage(error.name === "AbortError" ? "网络响应超时，请稍后再试。" : error.message);
+    } finally {
+      window.clearTimeout(timeout);
+    }
+  };
+
+  return (
+    <div className="booking-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+      <section className="booking-dialog" role="dialog" aria-modal="true" aria-labelledby="booking-title">
+        <button className="booking-close" type="button" onClick={onClose} aria-label="关闭预约表单"><X size={22} /></button>
+        <div className="booking-intro">
+          <p>PRIVATE VIEWING</p>
+          <h2 id="booking-title">预约参观</h2>
+          <span>留下联系方式，销售顾问将与您确认到访时间。</span>
+        </div>
+        {status === "success" ? (
+          <div className="booking-success" role="status">
+            <span aria-hidden="true">✓</span>
+            <h3>提交成功</h3>
+            <p>{message}</p>
+            <button type="button" onClick={onClose}>完成</button>
+          </div>
+        ) : (
+          <form className="booking-form" onSubmit={handleSubmit}>
+            <label>
+              <span>姓名</span>
+              <input ref={nameRef} name="name" type="text" autoComplete="name" minLength="2" maxLength="30" placeholder="请输入您的姓名" required />
+            </label>
+            <label>
+              <span>手机号码</span>
+              <input name="phone" type="tel" inputMode="tel" autoComplete="tel" maxLength="20" placeholder="请输入您的手机号码" required />
+            </label>
+            <label className="booking-honeypot" aria-hidden="true">
+              <span>公司</span><input name="company" type="text" tabIndex="-1" autoComplete="off" />
+            </label>
+            <label className="booking-consent">
+              <input name="consent" type="checkbox" required />
+              <span>我同意销售人员使用上述信息联系我，仅用于预约参观与项目咨询。</span>
+            </label>
+            {message && <p className="booking-message" role="alert">{message}</p>}
+            <button className="booking-submit" type="submit" disabled={status === "submitting"}>
+              <span>{status === "submitting" ? "正在提交" : "确认预约"}</span><ArrowRight size={18} />
+            </button>
+            <a className="booking-phone" href="tel:057186309988">或致电品鉴热线 0571 8630 9988</a>
+          </form>
+        )}
+      </section>
+    </div>
   );
 }
 
@@ -373,6 +488,9 @@ export function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scene, setScene] = useState(0);
   const [unit, setUnit] = useState(0);
+  const [bookingOpen, setBookingOpen] = useState(false);
+  const openBooking = useCallback(() => setBookingOpen(true), []);
+  const closeBooking = useCallback(() => setBookingOpen(false), []);
 
   useEffect(() => {
     let frame = 0;
@@ -397,18 +515,18 @@ export function App() {
   }, []);
 
   useEffect(() => {
-    document.body.classList.toggle("menu-lock", menuOpen);
+    document.body.classList.toggle("menu-lock", menuOpen || bookingOpen);
     return () => document.body.classList.remove("menu-lock");
-  }, [menuOpen]);
+  }, [menuOpen, bookingOpen]);
 
   return (
     <>
       <div className="intro-screen" aria-hidden="true"><span /><p>CHEUK NANG RIVERSIDE</p><i /></div>
       <div className="page-progress" aria-hidden="true" />
-      <Header solid={solid} open={menuOpen} setOpen={setMenuOpen} />
-      <a className="booking-float" href={BOOKING_FORM_URL} target="_blank" rel="noreferrer">
+      <Header solid={solid} open={menuOpen} setOpen={setMenuOpen} onBooking={openBooking} />
+      <button className="booking-float" type="button" onClick={openBooking}>
         <small>PRIVATE VIEWING</small><span>预约参观</span><ArrowRight size={17} />
-      </a>
+      </button>
       <main>
         <Hero />
         <Heritage />
@@ -419,9 +537,10 @@ export function App() {
         <Film />
         <Homes active={unit} setActive={setUnit} />
         <Benefits />
-        <Contact />
+        <Contact onBooking={openBooking} />
       </main>
       <Footer />
+      <BookingModal open={bookingOpen} onClose={closeBooking} />
     </>
   );
 }
