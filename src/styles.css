@@ -252,6 +252,40 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--gold-light); ou
 .booking-success p { color: var(--muted); font-size: 12px; line-height: 1.9; }
 .booking-success button { background: var(--navy); border: 1px solid var(--navy); color: #fff; cursor: pointer; margin-top: 28px; min-width: 160px; padding: 14px 20px; }
 
+.admin-login-page, .admin-page { background: #f4f0e9; color: #152535; min-height: 100svh; }
+.admin-login-page { align-items: flex-start; background: radial-gradient(circle at 75% 16%,rgba(190,151,88,.2),transparent 25%),linear-gradient(145deg,#071d34 0 38%,#f4f0e9 38%); display: flex; justify-content: center; padding: 11svh 22px 60px; }
+.admin-login-card { background: #fff; box-shadow: 0 28px 90px rgba(5,24,43,.22); max-width: 470px; padding: 54px 50px; width: 100%; }
+.admin-login-card > p, .admin-heading p { color: #a47a3d; font-family: Georgia,serif; font-size: 9px; letter-spacing: .28em; }
+.admin-login-card h1, .admin-heading h1 { font-family: "Songti SC",serif; font-size: clamp(38px,5vw,58px); font-weight: 400; letter-spacing: .1em; margin: 16px 0 18px; }
+.admin-login-card > span, .admin-heading span { color: #68737c; font-size: 12px; line-height: 1.9; }
+.admin-login-card form { margin-top: 36px; }
+.admin-login-card label { display: grid; gap: 10px; }
+.admin-login-card label span { font-size: 11px; letter-spacing: .12em; }
+.admin-login-card input { border: 0; border-bottom: 1px solid #b8b0a5; border-radius: 0; font: inherit; outline: 0; padding: 14px 0; }
+.admin-login-card input:focus { border-color: #a47a3d; }
+.admin-login-card form strong { color: #a64235; display: block; font-size: 11px; font-weight: 400; margin-top: 14px; }
+.admin-login-card form button { background: #071d34; border: 0; color: #fff; cursor: pointer; letter-spacing: .16em; margin-top: 24px; padding: 16px; width: 100%; }
+.admin-login-card form button:disabled { cursor: wait; opacity: .65; }
+.admin-loading { color: #68737c; font-size: 12px; margin-top: 38px; }
+.admin-topbar { align-items: center; background: #071d34; display: flex; justify-content: space-between; padding: 20px clamp(22px,5vw,70px); }
+.admin-topbar button { background: transparent; border: 1px solid rgba(255,255,255,.45); color: #fff; cursor: pointer; padding: 9px 15px; }
+.admin-shell { margin: 0 auto; max-width: 1240px; padding: 56px 24px 80px; }
+.admin-heading { align-items: end; display: flex; gap: 30px; justify-content: space-between; margin-bottom: 35px; }
+.admin-actions { display: flex; gap: 10px; }
+.admin-actions button, .admin-actions a { border: 1px solid #071d34; cursor: pointer; font-size: 12px; padding: 13px 18px; text-align: center; }
+.admin-actions button { background: transparent; color: #071d34; }
+.admin-actions a { background: #071d34; color: #fff; }
+.admin-table-card { background: #fff; box-shadow: 0 18px 55px rgba(7,29,52,.08); }
+.admin-count { border-bottom: 1px solid #e3ded6; color: #68737c; padding: 18px 22px; }
+.admin-count strong { color: #a47a3d; font-family: Georgia,serif; font-size: 23px; margin-right: 7px; }
+.admin-table-wrap { overflow-x: auto; }
+.admin-table-card table { border-collapse: collapse; min-width: 720px; width: 100%; }
+.admin-table-card th, .admin-table-card td { border-bottom: 1px solid #ece7df; padding: 17px 22px; text-align: left; }
+.admin-table-card th { background: #f8f5ef; color: #68737c; font-size: 11px; letter-spacing: .12em; }
+.admin-table-card td { font-size: 14px; }
+.admin-table-card td a { color: #274f72; }
+.admin-empty { color: #68737c; padding: 70px 24px; text-align: center; }
+
 footer { background: #041526; color: #fff; padding: 46px 0; }
 .footer-inner { align-items: center; display: grid; gap: 50px; grid-template-columns: 1fr auto; }
 .footer-inner > span { font-family: Georgia,serif; font-size: 8px; letter-spacing: .18em; opacity: .48; }
@@ -409,6 +443,14 @@ footer { background: #041526; color: #fff; padding: 46px 0; }
   .booking-form, .booking-success { padding: 34px 28px max(30px,env(safe-area-inset-bottom)); }
   .booking-form > label:not(.booking-consent):not(.booking-honeypot) { margin-bottom: 20px; }
   .booking-success h3 { font-size: 30px; }
+  .admin-login-page { background: linear-gradient(180deg,#071d34 0 170px,#f4f0e9 170px); padding: 70px 16px 40px; }
+  .admin-login-card { padding: 42px 28px; }
+  .admin-topbar { padding: 17px 18px; }
+  .admin-shell { padding: 38px 15px 60px; }
+  .admin-heading { align-items: stretch; display: grid; }
+  .admin-heading h1 { font-size: 38px; }
+  .admin-actions { display: grid; grid-template-columns: .7fr 1.3fr; }
+  .admin-actions button, .admin-actions a { padding-inline: 10px; }
   .footer-inner { gap: 28px; grid-template-columns: 1fr; }
 }
 

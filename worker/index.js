@@ -1,14 +1,16 @@
 const RESERVATION_PATH = "/api/reservations";
+const ADMIN_API_PREFIX = "/api/admin";
 const ADMIN_PATH = "/admin/reservations";
 const ADMIN_COOKIE = "reservation_admin";
 const PHONE_PATTERN = /^1[3-9]\d{9}$/;
 
-function json(body, status = 200) {
+function json(body, status = 200, extraHeaders = {}) {
   return new Response(JSON.stringify(body), {
     status,
     headers: {
       "cache-control": "no-store",
       "content-type": "application/json; charset=utf-8",
+      ...extraHeaders,
     },
   });
 }
@@ -106,6 +108,18 @@ function csvCell(value) {
   return `"${String(value).replaceAll('"', '""')}"`;
 }
 
+function reservationCsv(rows) {
+  const lines = ["编号,姓名,手机号码,提交时间", ...rows.map((row) => [row.id, row.name, row.phone, row.created_at].map(csvCell).join(","))];
+  const date = new Date().toISOString().slice(0, 10);
+  return new Response(`\ufeff${lines.join("\r\n")}`, {
+    headers: {
+      "cache-control": "no-store",
+      "content-disposition": `attachment; filename="cheuk-nang-reservations-${date}.csv"`,
+      "content-type": "text/csv; charset=utf-8",
+    },
+  });
+}
+
 async function listReservations(env, limit = 1000) {
   const [records, count] = await Promise.all([
     env.DB.prepare("SELECT id, name, phone, created_at FROM reservations ORDER BY id DESC LIMIT ?").bind(limit).all(),
@@ -164,6 +178,51 @@ export async function handleReservation(request, env) {
   }
 }
 
+export async function handleAdminApi(request, env) {
+  const url = new URL(request.url);
+  if (!env.ADMIN_PASSWORD || !env.DB) {
+    return json({ ok: false, message: "后台服务正在配置中。" }, 503);
+  }
+
+  if (url.pathname === "/api/admin/login" && request.method === "POST") {
+    if (!hasValidOrigin(request)) return json({ ok: false, message: "请求来源无效。" }, 403);
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return json({ ok: false, message: "请求格式无效。" }, 400);
+    }
+    const supplied = await adminSignature(String(body.password || ""));
+    const expected = await adminSignature(env.ADMIN_PASSWORD);
+    if (!constantTimeEqual(supplied, expected)) return json({ ok: false, message: "密码不正确。" }, 401);
+    return json({ ok: true }, 200, {
+      "set-cookie": `${ADMIN_COOKIE}=${expected}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=604800`,
+    });
+  }
+
+  if (url.pathname === "/api/admin/logout" && request.method === "POST") {
+    return json({ ok: true }, 200, {
+      "set-cookie": `${ADMIN_COOKIE}=; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=0`,
+    });
+  }
+
+  if (!(await isAdmin(request, env))) {
+    return json({ ok: false, message: "请先输入管理员密码。" }, 401);
+  }
+
+  if (url.pathname === "/api/admin/reservations.csv" && request.method === "GET") {
+    const { rows } = await listReservations(env, 5000);
+    return reservationCsv(rows);
+  }
+
+  if (url.pathname === "/api/admin/reservations" && request.method === "GET") {
+    const { rows, total } = await listReservations(env);
+    return json({ ok: true, rows, total });
+  }
+
+  return json({ ok: false, message: "Not found" }, 404);
+}
+
 export async function handleAdmin(request, env) {
   const url = new URL(request.url);
   if (!env.ADMIN_PASSWORD || !env.DB) {
@@ -175,11 +234,11 @@ export async function handleAdmin(request, env) {
     const supplied = await adminSignature(params.get("password") || "");
     const expected = await adminSignature(env.ADMIN_PASSWORD);
     if (!constantTimeEqual(supplied, expected)) return html(loginPage("密码不正确，请重新输入。"), 401);
-    return redirect(ADMIN_PATH, { "set-cookie": `${ADMIN_COOKIE}=${expected}; Path=/admin; HttpOnly; Secure; SameSite=Strict; Max-Age=604800` });
+    return redirect(ADMIN_PATH, { "set-cookie": `${ADMIN_COOKIE}=${expected}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=604800` });
   }
 
   if (url.pathname === "/admin/logout" && request.method === "POST") {
-    return redirect(ADMIN_PATH, { "set-cookie": `${ADMIN_COOKIE}=; Path=/admin; HttpOnly; Secure; SameSite=Strict; Max-Age=0` });
+    return redirect(ADMIN_PATH, { "set-cookie": `${ADMIN_COOKIE}=; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=0` });
   }
 
   if (url.pathname === "/admin") return redirect(ADMIN_PATH);
@@ -190,15 +249,7 @@ export async function handleAdmin(request, env) {
 
   if (url.pathname === "/admin/reservations.csv" && request.method === "GET") {
     const { rows } = await listReservations(env, 5000);
-    const lines = ["编号,姓名,手机号码,提交时间", ...rows.map((row) => [row.id, row.name, row.phone, row.created_at].map(csvCell).join(","))];
-    const date = new Date().toISOString().slice(0, 10);
-    return new Response(`\ufeff${lines.join("\r\n")}`, {
-      headers: {
-        "cache-control": "no-store",
-        "content-disposition": `attachment; filename="cheuk-nang-reservations-${date}.csv"`,
-        "content-type": "text/csv; charset=utf-8",
-      },
-    });
+    return reservationCsv(rows);
   }
 
   if (url.pathname === ADMIN_PATH && request.method === "GET") {
@@ -211,6 +262,7 @@ export async function handleAdmin(request, env) {
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+    if (url.pathname.startsWith(ADMIN_API_PREFIX)) return handleAdminApi(request, env);
     if (url.pathname === RESERVATION_PATH) return handleReservation(request, env);
     if (url.pathname.startsWith("/admin")) return handleAdmin(request, env);
 

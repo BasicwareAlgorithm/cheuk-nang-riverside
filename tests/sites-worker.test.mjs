@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { access } from "node:fs/promises";
 import test from "node:test";
-import worker, { handleAdmin, handleReservation } from "../worker/index.js";
+import worker, { handleAdmin, handleAdminApi, handleReservation } from "../worker/index.js";
 
 function createD1(initialRows = []) {
   const rows = initialRows.map((row) => ({ ...row }));
@@ -168,6 +168,35 @@ test("protects the reservation dashboard and exports an Excel-compatible CSV", a
   assert.match(csv.headers.get("content-disposition"), /\.csv/);
   assert.deepEqual([...csvBytes.slice(0, 3)], [0xef, 0xbb, 0xbf]);
   assert.match(csvText, /"李女士","13900139000"/);
+});
+
+test("supports the cache-safe SPA admin API", async () => {
+  const DB = createD1([{ id: 1, name: "王先生", phone: "13800138000", created_at: "2026-08-11 16:32:00" }]);
+  const env = { DB, ADMIN_PASSWORD: "strong-test-password" };
+
+  const unauthorized = await handleAdminApi(new Request("https://example.test/api/admin/reservations"), env);
+  assert.equal(unauthorized.status, 401);
+
+  const login = await handleAdminApi(new Request("https://example.test/api/admin/login", {
+    method: "POST",
+    headers: { "content-type": "application/json", origin: "https://example.test" },
+    body: JSON.stringify({ password: "strong-test-password" }),
+  }), env);
+  assert.equal(login.status, 200);
+  const cookie = login.headers.get("set-cookie").split(";", 1)[0];
+  assert.match(login.headers.get("set-cookie"), /Path=\//);
+
+  const records = await handleAdminApi(new Request("https://example.test/api/admin/reservations", { headers: { cookie } }), env);
+  assert.equal(records.status, 200);
+  assert.deepEqual(await records.json(), {
+    ok: true,
+    rows: [{ id: 1, name: "王先生", phone: "13800138000", created_at: "2026-08-11 16:32:00" }],
+    total: 1,
+  });
+
+  const csv = await handleAdminApi(new Request("https://example.test/api/admin/reservations.csv", { headers: { cookie } }), env);
+  assert.equal(csv.status, 200);
+  assert.match(await csv.text(), /王先生/);
 });
 
 test("emits the files required by Sites packaging", async () => {

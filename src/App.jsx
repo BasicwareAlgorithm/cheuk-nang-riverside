@@ -12,6 +12,7 @@ import {
 const MATERIAL = "/assets/ppt";
 const DEPLOY_BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 const RESERVATION_ENDPOINT = "/api/reservations";
+const ADMIN_ENDPOINT = "/api/admin/reservations";
 const PHONE_PATTERN = /^(?:\+?86[- ]?)?1[3-9]\d{9}$/;
 
 function asset(path) {
@@ -477,13 +478,110 @@ function BookingModal({ open, onClose }) {
   );
 }
 
+function ReservationAdmin() {
+  const [password, setPassword] = useState("");
+  const [status, setStatus] = useState("loading");
+  const [message, setMessage] = useState("");
+  const [records, setRecords] = useState([]);
+  const [total, setTotal] = useState(0);
+
+  const loadRecords = useCallback(async () => {
+    setStatus("loading");
+    setMessage("");
+    try {
+      const response = await fetch(ADMIN_ENDPOINT, { credentials: "same-origin" });
+      const result = await response.json().catch(() => ({}));
+      if (response.status === 401) {
+        setStatus("login");
+        return;
+      }
+      if (!response.ok) throw new Error(result.message || "后台数据加载失败。");
+      setRecords(result.rows || []);
+      setTotal(Number(result.total || 0));
+      setStatus("ready");
+    } catch (error) {
+      setStatus("error");
+      setMessage(error.message);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadRecords();
+  }, [loadRecords]);
+
+  const handleLogin = async (event) => {
+    event.preventDefault();
+    setStatus("submitting");
+    setMessage("");
+    try {
+      const response = await fetch("/api/admin/login", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ password }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.message || "登录失败。");
+      setPassword("");
+      await loadRecords();
+    } catch (error) {
+      setStatus("login");
+      setMessage(error.message);
+    }
+  };
+
+  const handleLogout = async () => {
+    await fetch("/api/admin/logout", { method: "POST", credentials: "same-origin" });
+    setRecords([]);
+    setTotal(0);
+    setStatus("login");
+  };
+
+  if (["loading", "login", "submitting", "error"].includes(status)) {
+    return (
+      <main className="admin-login-page">
+        <section className="admin-login-card">
+          <p>CHEUK NANG RIVERSIDE</p>
+          <h1>预约后台</h1>
+          <span>输入管理员密码，查看客户预约记录并下载 Excel 表格。</span>
+          {status === "loading" ? <div className="admin-loading">正在连接预约数据库…</div> : (
+            <form onSubmit={handleLogin}>
+              <label><span>管理员密码</span><input type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" required autoFocus /></label>
+              {message && <strong role="alert">{message}</strong>}
+              <button type="submit" disabled={status === "submitting"}>{status === "submitting" ? "正在登录" : "进入后台"}</button>
+            </form>
+          )}
+        </section>
+      </main>
+    );
+  }
+
+  return (
+    <main className="admin-page">
+      <header className="admin-topbar"><Brand light /><button type="button" onClick={handleLogout}>退出登录</button></header>
+      <section className="admin-shell">
+        <div className="admin-heading">
+          <div><p>RESERVATION ADMIN</p><h1>预约客户记录</h1><span>提交时间为中国标准时间，最新记录排在最前。</span></div>
+          <div className="admin-actions"><button type="button" onClick={loadRecords}>刷新</button><a href="/api/admin/reservations.csv">下载 Excel 表格</a></div>
+        </div>
+        <div className="admin-table-card">
+          <div className="admin-count"><strong>{total}</strong> 条预约记录</div>
+          {records.length ? (
+            <div className="admin-table-wrap"><table><thead><tr><th>编号</th><th>姓名</th><th>手机号码</th><th>提交时间</th></tr></thead><tbody>{records.map((record) => <tr key={record.id}><td>{record.id}</td><td>{record.name}</td><td><a href={`tel:${record.phone}`}>{record.phone}</a></td><td>{record.created_at}</td></tr>)}</tbody></table></div>
+          ) : <div className="admin-empty">还没有预约记录</div>}
+        </div>
+      </section>
+    </main>
+  );
+}
+
 function Footer() {
   return (
     <footer><div className="shell footer-inner"><Brand light /><span>CHEUK NANG RIVERSIDE © 2026</span></div></footer>
   );
 }
 
-export function App() {
+function SiteApp() {
   const [solid, setSolid] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [scene, setScene] = useState(0);
@@ -543,4 +641,9 @@ export function App() {
       <BookingModal open={bookingOpen} onClose={closeBooking} />
     </>
   );
+}
+
+export function App() {
+  if (globalThis.location?.hash.startsWith("#/admin/reservations")) return <ReservationAdmin />;
+  return <SiteApp />;
 }
