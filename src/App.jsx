@@ -357,7 +357,7 @@ function Contact() {
 
 function Footer() {
   return (
-    <footer><div className="shell footer-inner"><Brand light /><p>本页面图文与视频均取自项目介绍与推介材料，具体信息以政府批准文件及最终合同约定为准。</p><span>CHEUK NANG RIVERSIDE © 2026</span></div></footer>
+    <footer><div className="shell footer-inner"><Brand light /><span>CHEUK NANG RIVERSIDE © 2026</span></div></footer>
   );
 }
 
