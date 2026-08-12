@@ -246,13 +246,17 @@ test("emits the files required by Sites packaging", async () => {
   await access(new URL("../dist/.openai/hosting.json", import.meta.url));
 });
 
-test("binds the reservation dashboard to its custom admin domain", async () => {
+test("routes same-origin APIs from the public and admin domains to the Worker", async () => {
   const config = JSON.parse(await readFile(new URL("../wrangler.jsonc", import.meta.url), "utf8"));
 
   assert.deepEqual(config.routes, [
     {
-      pattern: "admin.cheuknangriverside.com",
-      custom_domain: true,
+      pattern: "www.cheuknangriverside.com/api/*",
+      zone_name: "cheuknangriverside.com",
+    },
+    {
+      pattern: "admin.cheuknangriverside.com/api/*",
+      zone_name: "cheuknangriverside.com",
     },
   ]);
 });

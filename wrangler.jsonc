@@ -10,8 +10,12 @@
   },
   "routes": [
     {
-      "pattern": "admin.cheuknangriverside.com",
-      "custom_domain": true
+      "pattern": "www.cheuknangriverside.com/api/*",
+      "zone_name": "cheuknangriverside.com"
+    },
+    {
+      "pattern": "admin.cheuknangriverside.com/api/*",
+      "zone_name": "cheuknangriverside.com"
     }
   ],
   "d1_databases": [
