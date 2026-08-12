@@ -160,7 +160,7 @@ function Hero() {
         <p className="hero-kicker">卓能集团 · 首献杭州</p>
         <h1><span>卓能</span><em>·</em><span>河畔轩</span></h1>
         <div className="hero-rule" />
-        <h2>轻享杭州的丰盛生活</h2>
+        <h2>轻享杭州的丰盈生活</h2>
         <p className="hero-meta">临平崇贤 · 地铁口 · 公园旁 · 建面约65-138㎡百万级实景现房</p>
       </div>
       <a className="hero-scroll" href="#heritage"><span>SCROLL</span><ArrowDown size={17} /></a>
@@ -335,7 +335,7 @@ function Benefits() {
   return (
     <section className="benefits">
       <div className="shell benefits-inner">
-        <Reveal><p>THREE VALUE PROPOSITIONS</p><h2>三大利 诚意首开</h2><span>轻享杭州的丰盛生活</span></Reveal>
+        <Reveal><p>THREE VALUE PROPOSITIONS</p><h2>三大利 诚意首开</h2><span>轻享杭州的丰盈生活</span></Reveal>
         <div className="benefit-grid">{items.map(([value, title], index) => <Reveal className="benefit" delay={index * 90} key={title}><span>0{index + 1}</span><p>{title}</p><strong>{value}</strong></Reveal>)}</div>
       </div>
     </section>
@@ -425,7 +425,7 @@ function BookingModal({ open, onClose }) {
       if (!response.ok) throw new Error(result.message || "提交失败，请稍后再试。");
       form.reset();
       setStatus("success");
-      setMessage("预约已提交，销售顾问会尽快与您联系。");
+      setMessage("预约已提交，置业顾问会尽快与您联系。");
     } catch (error) {
       setStatus("error");
       setMessage(error.name === "AbortError" ? "网络响应超时，请稍后再试。" : error.message);
@@ -441,7 +441,7 @@ function BookingModal({ open, onClose }) {
         <div className="booking-intro">
           <p>PRIVATE VIEWING</p>
           <h2 id="booking-title">预约参观</h2>
-          <span>留下联系方式，销售顾问将与您确认到访时间。</span>
+          <span>留下联系方式，置业顾问将与您确认到访时间。</span>
         </div>
         {status === "success" ? (
           <div className="booking-success" role="status">
