@@ -14,8 +14,8 @@
       "zone_name": "cheuknangriverside.com"
     },
     {
-      "pattern": "records.cheuknangriverside.com/api/*",
-      "zone_name": "cheuknangriverside.com"
+      "pattern": "records.cheuknangriverside.com",
+      "custom_domain": true
     }
   ],
   "d1_databases": [

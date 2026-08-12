@@ -246,7 +246,7 @@ test("emits the files required by Sites packaging", async () => {
   await access(new URL("../dist/.openai/hosting.json", import.meta.url));
 });
 
-test("routes same-origin APIs from the public and admin domains to the Worker", async () => {
+test("routes public APIs and the records domain to the Worker", async () => {
   const config = JSON.parse(await readFile(new URL("../wrangler.jsonc", import.meta.url), "utf8"));
 
   assert.deepEqual(config.routes, [
@@ -255,8 +255,8 @@ test("routes same-origin APIs from the public and admin domains to the Worker", 
       zone_name: "cheuknangriverside.com",
     },
     {
-      pattern: "records.cheuknangriverside.com/api/*",
-      zone_name: "cheuknangriverside.com",
+      pattern: "records.cheuknangriverside.com",
+      custom_domain: true,
     },
   ]);
 });
