@@ -264,6 +264,8 @@ export async function handleAdminApi(request, env) {
 
 export async function handleAdmin(request, env) {
   const url = new URL(request.url);
+  const isRecordsDomain = url.hostname === "records.cheuknangriverside.com";
+  const dashboardPath = isRecordsDomain ? "/" : ADMIN_PATH;
   if (!env.ADMIN_PASSWORD || !env.DB) {
     return html(pageShell("后台配置中", '<main class="login"><p class="eyebrow">CHEUK NANG RIVERSIDE</p><h1>后台配置中</h1><p>数据库或管理员密码尚未完成配置。</p></main>'), 503);
   }
@@ -273,16 +275,16 @@ export async function handleAdmin(request, env) {
     const supplied = await adminSignature(params.get("password") || "");
     const expected = await adminSignature(env.ADMIN_PASSWORD);
     if (!constantTimeEqual(supplied, expected)) return html(loginPage("密码不正确，请重新输入。"), 401);
-    return redirect(ADMIN_PATH, { "set-cookie": `${ADMIN_COOKIE}=${expected}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=604800` });
+    return redirect(dashboardPath, { "set-cookie": `${ADMIN_COOKIE}=${expected}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=604800` });
   }
 
   if (url.pathname === "/admin/logout" && request.method === "POST") {
-    return redirect(ADMIN_PATH, { "set-cookie": `${ADMIN_COOKIE}=; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=0` });
+    return redirect(dashboardPath, { "set-cookie": `${ADMIN_COOKIE}=; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=0` });
   }
 
   if (url.pathname === "/admin") return redirect(ADMIN_PATH);
   if (!(await isAdmin(request, env))) {
-    if (url.pathname.endsWith(".csv")) return redirect(ADMIN_PATH);
+    if (url.pathname.endsWith(".csv")) return redirect(dashboardPath);
     return html(loginPage());
   }
 
@@ -291,7 +293,7 @@ export async function handleAdmin(request, env) {
     return reservationCsv(rows);
   }
 
-  if (url.pathname === ADMIN_PATH && request.method === "GET") {
+  if ((url.pathname === ADMIN_PATH || (isRecordsDomain && url.pathname === "/")) && request.method === "GET") {
     const { rows, total } = await listReservations(env);
     return html(adminPage(rows, total));
   }
@@ -303,7 +305,9 @@ export default {
     const url = new URL(request.url);
     if (url.pathname.startsWith(ADMIN_API_PREFIX)) return handleAdminApi(request, env);
     if (url.pathname === RESERVATION_PATH) return handleReservation(request, env);
-    if (url.pathname.startsWith("/admin")) return handleAdmin(request, env);
+    if (url.pathname.startsWith("/admin") || (url.hostname === "records.cheuknangriverside.com" && url.pathname === "/")) {
+      return handleAdmin(request, env);
+    }
 
     const response = await env.ASSETS.fetch(request);
     const acceptsHtml = request.headers.get("accept")?.includes("text/html");

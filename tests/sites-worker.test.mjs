@@ -211,6 +211,29 @@ test("protects the reservation dashboard and exports an Excel-compatible CSV", a
   assert.match(csvText, /"李女士","13900139000"/);
 });
 
+test("serves the reservation dashboard directly at the records domain root", async () => {
+  const DB = createD1([{ id: 1, name: "赵女士", phone: "13700137000", created_at: "2026-08-12 18:00:00" }]);
+  const env = { DB, ADMIN_PASSWORD: "strong-test-password" };
+  const rootUrl = "https://records.cheuknangriverside.com/";
+
+  const loginPage = await worker.fetch(new Request(rootUrl), env);
+  assert.equal(loginPage.status, 200);
+  assert.match(await loginPage.text(), /管理员密码/);
+
+  const login = await worker.fetch(new Request("https://records.cheuknangriverside.com/admin/login", {
+    method: "POST",
+    headers: { "content-type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ password: "strong-test-password" }),
+  }), env);
+  assert.equal(login.status, 303);
+  assert.equal(login.headers.get("location"), "/");
+
+  const cookie = login.headers.get("set-cookie").split(";", 1)[0];
+  const dashboard = await worker.fetch(new Request(rootUrl, { headers: { cookie } }), env);
+  assert.equal(dashboard.status, 200);
+  assert.match(await dashboard.text(), /赵女士/);
+});
+
 test("supports the cache-safe SPA admin API", async () => {
   const DB = createD1([{ id: 1, name: "王先生", phone: "13800138000", created_at: "2026-08-11 16:32:00" }]);
   const env = { DB, ADMIN_PASSWORD: "strong-test-password" };
