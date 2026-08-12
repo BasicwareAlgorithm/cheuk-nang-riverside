@@ -10,6 +10,7 @@ import {
 } from "@phosphor-icons/react";
 
 const MATERIAL = "/assets/ppt";
+const PROJECT_FILM_URL = `https://media.cheuknangriverside.com${MATERIAL}/project-film.mp4`;
 const DEPLOY_BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 const RESERVATION_ENDPOINT = "/api/reservations";
 const ADMIN_ENDPOINT = "/api/admin/reservations";
@@ -293,7 +294,7 @@ function Film() {
       </div>
       <Reveal className="film-frame">
         <video controls playsInline preload="metadata" poster={asset(`${MATERIAL}/interior-panorama.jpg`)}>
-          <source src={asset(`${MATERIAL}/project-film.mp4`)} type="video/mp4" />
+          <source src={PROJECT_FILM_URL} type="video/mp4" />
         </video>
         <span>CHEUK NANG RIVERSIDE · PROJECT FILM</span>
       </Reveal>
