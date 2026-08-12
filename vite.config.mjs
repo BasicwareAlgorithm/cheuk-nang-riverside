@@ -12,6 +12,12 @@ export default defineConfig({
   server: {
     host: "0.0.0.0",
     allowedHosts: ["terminal.local"],
+    proxy: {
+      "/api": {
+        target: "https://cheuk-nang-riverside.hezhenzhen.workers.dev",
+        changeOrigin: true,
+      },
+    },
     warmup: {
       clientFiles: ["./src/main.jsx"],
     },
