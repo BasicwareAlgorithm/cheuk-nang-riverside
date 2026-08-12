@@ -660,7 +660,6 @@ function SiteApp() {
 
   return (
     <>
-      <div className="intro-screen" aria-hidden="true"><span /><p>CHEUK NANG RIVERSIDE</p><i /></div>
       <div className="page-progress" aria-hidden="true" />
       <Header solid={solid} open={menuOpen} setOpen={setMenuOpen} onBooking={openBooking} />
       <button className="booking-float" type="button" onClick={openBooking}>
