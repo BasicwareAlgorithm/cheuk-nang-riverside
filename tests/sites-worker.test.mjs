@@ -278,8 +278,8 @@ test("routes public APIs and the records domain to the Worker", async () => {
       zone_name: "cheuknangriverside.com",
     },
     {
-      pattern: "records.cheuknangriverside.com",
-      custom_domain: true,
+      pattern: "records.cheuknangriverside.com/*",
+      zone_name: "cheuknangriverside.com",
     },
   ]);
 });
