@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { access } from "node:fs/promises";
+import { access, readFile } from "node:fs/promises";
 import test from "node:test";
 import worker, { handleAdmin, handleAdminApi, handleReservation } from "../worker/index.js";
 
@@ -244,4 +244,15 @@ test("emits the files required by Sites packaging", async () => {
   await access(new URL("../dist/client/index.html", import.meta.url));
   await access(new URL("../dist/server/index.js", import.meta.url));
   await access(new URL("../dist/.openai/hosting.json", import.meta.url));
+});
+
+test("binds the reservation dashboard to its custom admin domain", async () => {
+  const config = JSON.parse(await readFile(new URL("../wrangler.jsonc", import.meta.url), "utf8"));
+
+  assert.deepEqual(config.routes, [
+    {
+      pattern: "admin.cheuknangriverside.com",
+      custom_domain: true,
+    },
+  ]);
 });
