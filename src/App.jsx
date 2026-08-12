@@ -118,7 +118,9 @@ function Reveal({ children, className = "", delay = 0 }) {
 function Brand({ light = false }) {
   return (
     <a className={`brand ${light ? "is-light" : ""}`} href="#top" aria-label="卓能河畔轩首页">
-      <span className="brand-mark" aria-hidden="true" />
+      <span className="brand-mark" aria-hidden="true">
+        <img src="/assets/brand/cheuk-nang-riverside-mark.png" alt="" />
+      </span>
       <span><strong>卓能·河畔轩</strong><small>CHEUK NANG RIVERSIDE</small></span>
     </a>
   );

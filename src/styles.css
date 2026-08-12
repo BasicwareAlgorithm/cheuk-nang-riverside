@@ -46,10 +46,9 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--gold-light); ou
 .site-header.is-solid { background: rgba(244,240,233,.985); box-shadow: 0 12px 40px rgba(5,25,43,.08); color: var(--ink); height: 72px; }
 .site-header.is-solid::after { background: var(--line); left: 0; right: 0; }
 .brand { align-items: center; display: inline-flex; gap: 14px; width: max-content; }
-.brand-mark { border: 1px solid currentColor; border-radius: 50%; display: block; height: 33px; opacity: .75; position: relative; width: 33px; }
-.brand-mark::before, .brand-mark::after { border: 1px solid currentColor; border-radius: 50%; content: ""; position: absolute; }
-.brand-mark::before { inset: 6px -5px 6px 10px; }
-.brand-mark::after { inset: 11px 8px 2px -3px; }
+.brand-mark { display: block; flex: 0 0 auto; height: 38px; width: 38px; }
+.brand-mark img { display: block; filter: brightness(0) saturate(100%) invert(10%) sepia(27%) saturate(1161%) hue-rotate(166deg) brightness(92%) contrast(98%); height: 100%; object-fit: contain; width: 100%; }
+.brand.is-light .brand-mark img { filter: none; }
 .brand > span:last-child { display: grid; gap: 5px; }
 .brand strong { font-family: "Songti SC", "STSong", serif; font-size: 17px; font-weight: 400; letter-spacing: .18em; line-height: 1; }
 .brand small { font-family: Georgia, serif; font-size: 7px; letter-spacing: .17em; opacity: .72; }
@@ -374,7 +373,7 @@ footer { background: #041526; color: #fff; padding: 46px 0; }
   .intro-screen span, .intro-screen i { width: 12vw; }
   .brand strong { font-size: 15px; }
   .brand small { font-size: 6px; }
-  .brand-mark { height: 29px; width: 29px; }
+  .brand-mark { height: 34px; width: 34px; }
   .hero { min-height: 690px; }
   .hero-image { object-position: 62% center; }
   .hero-veil { background: linear-gradient(90deg,rgba(3,17,31,.72),rgba(3,17,31,.28)),linear-gradient(0deg,rgba(2,14,26,.64),transparent 50%); }
