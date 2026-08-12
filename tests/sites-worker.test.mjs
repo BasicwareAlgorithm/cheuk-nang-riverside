@@ -255,7 +255,7 @@ test("routes same-origin APIs from the public and admin domains to the Worker", 
       zone_name: "cheuknangriverside.com",
     },
     {
-      pattern: "admin.cheuknangriverside.com/api/*",
+      pattern: "records.cheuknangriverside.com/api/*",
       zone_name: "cheuknangriverside.com",
     },
   ]);
