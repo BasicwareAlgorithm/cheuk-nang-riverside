@@ -123,9 +123,9 @@ test("writes a valid reservation to D1", async () => {
   assert.match(result.requestId, /^[0-9a-f-]{36}$/);
 });
 
-test("allows the public website to submit reservations across origins", async () => {
+test("allows the public website to submit reservations on the same origin", async () => {
   const origin = "https://www.cheuknangriverside.com";
-  const endpoint = "https://cheuk-nang-riverside.hezhenzhen.workers.dev/api/reservations";
+  const endpoint = `${origin}/api/reservations`;
 
   const preflight = await handleReservation(new Request(endpoint, {
     method: "OPTIONS",
