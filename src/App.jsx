@@ -684,6 +684,9 @@ function SiteApp() {
 }
 
 export function App() {
-  if (globalThis.location?.hash.startsWith("#/admin/reservations")) return <ReservationAdmin />;
+  if (
+    globalThis.location?.hostname === "records.cheuknangriverside.com"
+    || globalThis.location?.hash.startsWith("#/admin/reservations")
+  ) return <ReservationAdmin />;
   return <SiteApp />;
 }
