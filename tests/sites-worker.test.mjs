@@ -269,17 +269,7 @@ test("emits the files required by Sites packaging", async () => {
   await access(new URL("../dist/.openai/hosting.json", import.meta.url));
 });
 
-test("routes public APIs and the records domain to the Worker", async () => {
+test("does not recreate retired Worker routes", async () => {
   const config = JSON.parse(await readFile(new URL("../wrangler.jsonc", import.meta.url), "utf8"));
-
-  assert.deepEqual(config.routes, [
-    {
-      pattern: "www.cheuknangriverside.com/api/*",
-      zone_name: "cheuknangriverside.com",
-    },
-    {
-      pattern: "records.cheuknangriverside.com/*",
-      zone_name: "cheuknangriverside.com",
-    },
-  ]);
+  assert.equal(config.routes, undefined);
 });

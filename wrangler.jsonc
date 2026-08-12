@@ -8,16 +8,6 @@
     "directory": "./dist/client",
     "not_found_handling": "single-page-application"
   },
-  "routes": [
-    {
-      "pattern": "www.cheuknangriverside.com/api/*",
-      "zone_name": "cheuknangriverside.com"
-    },
-    {
-      "pattern": "records.cheuknangriverside.com/*",
-      "zone_name": "cheuknangriverside.com"
-    }
-  ],
   "d1_databases": [
     {
       "binding": "DB",
