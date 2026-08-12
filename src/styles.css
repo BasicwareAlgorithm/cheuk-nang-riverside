@@ -99,6 +99,9 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--gold-light); ou
 
 .project { overflow: hidden; padding: 155px 0 170px; }
 .project-grid { align-items: center; display: grid; gap: clamp(70px,9vw,140px); grid-template-columns: .86fr 1.14fr; }
+.project-copy .section-title h2 { font-size: clamp(40px,4vw,62px); line-height: 1.22; }
+.project-copy .section-title h2 > span { display: block; white-space: nowrap; }
+.project-copy .section-title h2 > span + span { margin-top: .08em; }
 .project-copy h3 { font-family: "Songti SC", serif; font-size: clamp(26px,2.4vw,36px); font-weight: 400; letter-spacing: .16em; margin: 52px 0 28px; }
 .project-copy > p { color: var(--muted); font-size: 14px; letter-spacing: .05em; line-height: 2.1; }
 .project-copy dl { border-top: 1px solid var(--line); display: grid; grid-template-columns: repeat(3,1fr); margin: 42px 0 38px; }
@@ -392,6 +395,7 @@ footer { background: #041526; color: #fff; padding: 46px 0; }
   .heritage-stats { padding: 0 18px; }
   .chapter-sign { display: none; }
   .project { padding: 100px 0; }
+  .project-copy .section-title h2 { font-size: clamp(32px,10vw,42px); letter-spacing: .07em; }
   .project-copy h3 { font-size: 24px; }
   .project-copy dl { grid-template-columns: 1fr; }
   .project-copy dl > div, .project-copy dl > div:last-child { border-bottom: 1px solid var(--line); border-right: 0; padding: 18px 0; }

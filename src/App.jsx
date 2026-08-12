@@ -204,7 +204,7 @@ function Project() {
     <section className="project paper" id="project">
       <div className="shell project-grid">
         <Reveal className="project-copy">
-          <SectionTitle index="02" en="PROJECT OVERVIEW" title="千亿大城北 崇贤新城乘势而上" />
+          <SectionTitle index="02" en="PROJECT OVERVIEW" title={<><span>大城北崛起</span><span>崇贤正当时</span></>} />
           <h3>你在杭州的第一个家</h3>
           <p>项目位于杭州临平区崇贤板块核心，踞守绕城内稀缺价格洼地。地铁、商业、教育、医疗与山水生态环伺，以主城级配套和亲民门槛，打造品质生活新标杆。</p>
           <dl>
