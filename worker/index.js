@@ -3,6 +3,12 @@ const ADMIN_API_PREFIX = "/api/admin";
 const ADMIN_PATH = "/admin/reservations";
 const ADMIN_COOKIE = "reservation_admin";
 const PHONE_PATTERN = /^1[3-9]\d{9}$/;
+const RESERVATION_ORIGINS = new Set([
+  "https://cheuknangriverside.com",
+  "https://www.cheuknangriverside.com",
+  "http://127.0.0.1:5173",
+  "http://localhost:5173",
+]);
 
 function json(body, status = 200, extraHeaders = {}) {
   return new Response(JSON.stringify(body), {
@@ -53,6 +59,31 @@ function hasValidOrigin(request) {
   } catch {
     return false;
   }
+}
+
+function reservationCorsHeaders(request) {
+  const origin = request.headers.get("origin");
+  if (!origin) return {};
+
+  let allowed = false;
+  try {
+    allowed = new URL(origin).hostname === new URL(request.url).hostname || RESERVATION_ORIGINS.has(origin);
+  } catch {
+    allowed = false;
+  }
+
+  if (!allowed) return {};
+  return {
+    "access-control-allow-headers": "content-type",
+    "access-control-allow-methods": "POST, OPTIONS",
+    "access-control-allow-origin": origin,
+    "access-control-max-age": "86400",
+    vary: "Origin",
+  };
+}
+
+function reservationJson(request, body, status = 200) {
+  return json(body, status, reservationCorsHeaders(request));
 }
 
 function getCookie(request, name) {
@@ -129,52 +160,60 @@ async function listReservations(env, limit = 1000) {
 }
 
 export async function handleReservation(request, env) {
-  if (request.method !== "POST") {
-    return json({ ok: false, message: "仅支持提交预约信息。" }, 405);
+  if (request.method === "OPTIONS") {
+    const headers = reservationCorsHeaders(request);
+    if (!headers["access-control-allow-origin"]) {
+      return reservationJson(request, { ok: false, message: "请求来源无效。" }, 403);
+    }
+    return new Response(null, { status: 204, headers });
   }
-  if (!hasValidOrigin(request)) {
-    return json({ ok: false, message: "请求来源无效。" }, 403);
+  if (request.method !== "POST") {
+    return reservationJson(request, { ok: false, message: "仅支持提交预约信息。" }, 405);
+  }
+  const corsHeaders = reservationCorsHeaders(request);
+  if (request.headers.get("origin") && !corsHeaders["access-control-allow-origin"]) {
+    return reservationJson(request, { ok: false, message: "请求来源无效。" }, 403);
   }
   if (!request.headers.get("content-type")?.toLowerCase().startsWith("application/json")) {
-    return json({ ok: false, message: "请求格式无效。" }, 415);
+    return reservationJson(request, { ok: false, message: "请求格式无效。" }, 415);
   }
 
   const rawBody = await request.text();
   if (rawBody.length > 2_048) {
-    return json({ ok: false, message: "提交内容过长。" }, 413);
+    return reservationJson(request, { ok: false, message: "提交内容过长。" }, 413);
   }
 
   let body;
   try {
     body = JSON.parse(rawBody);
   } catch {
-    return json({ ok: false, message: "请求格式无效。" }, 400);
+    return reservationJson(request, { ok: false, message: "请求格式无效。" }, 400);
   }
 
   if (String(body.company ?? "").trim()) {
-    return json({ ok: true }, 201);
+    return reservationJson(request, { ok: true }, 201);
   }
 
   const name = String(body.name ?? "").trim();
   const phone = normalizePhone(String(body.phone ?? "").trim());
   if (name.length < 2 || name.length > 30 || /[\u0000-\u001f\u007f]/.test(name)) {
-    return json({ ok: false, message: "请输入2至30个字符的姓名。" }, 400);
+    return reservationJson(request, { ok: false, message: "请输入2至30个字符的姓名。" }, 400);
   }
   if (!PHONE_PATTERN.test(phone)) {
-    return json({ ok: false, message: "请输入正确的中国大陆手机号码。" }, 400);
+    return reservationJson(request, { ok: false, message: "请输入正确的中国大陆手机号码。" }, 400);
   }
   if (!env.DB) {
-    return json({ ok: false, message: "预约服务正在配置中，请拨打品鉴热线。" }, 503);
+    return reservationJson(request, { ok: false, message: "预约服务正在配置中，请拨打品鉴热线。" }, 503);
   }
 
   const requestId = crypto.randomUUID();
   try {
     const result = await env.DB.prepare("INSERT INTO reservations (name, phone) VALUES (?, ?)").bind(name, phone).run();
     if (!result.success) throw new Error("D1 insert did not succeed");
-    return json({ ok: true, requestId }, 201);
+    return reservationJson(request, { ok: true, requestId }, 201);
   } catch (error) {
     console.error("Reservation write failed", { requestId, reason: error.message });
-    return json({ ok: false, message: "提交暂时未成功，请稍后再试或拨打品鉴热线。", requestId }, 502);
+    return reservationJson(request, { ok: false, message: "提交暂时未成功，请稍后再试或拨打品鉴热线。", requestId }, 502);
   }
 }
 

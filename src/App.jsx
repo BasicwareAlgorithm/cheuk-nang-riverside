@@ -11,7 +11,8 @@ import {
 
 const MATERIAL = "/assets/ppt";
 const DEPLOY_BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
-const RESERVATION_ENDPOINT = "/api/reservations";
+const RESERVATION_API_ORIGIN = "https://cheuk-nang-riverside.hezhenzhen.workers.dev";
+const RESERVATION_ENDPOINT = `${RESERVATION_API_ORIGIN}/api/reservations`;
 const ADMIN_ENDPOINT = "/api/admin/reservations";
 const PHONE_PATTERN = /^(?:\+?86[- ]?)?1[3-9]\d{9}$/;
 

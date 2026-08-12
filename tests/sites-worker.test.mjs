@@ -123,6 +123,47 @@ test("writes a valid reservation to D1", async () => {
   assert.match(result.requestId, /^[0-9a-f-]{36}$/);
 });
 
+test("allows the public website to submit reservations across origins", async () => {
+  const origin = "https://www.cheuknangriverside.com";
+  const endpoint = "https://cheuk-nang-riverside.hezhenzhen.workers.dev/api/reservations";
+
+  const preflight = await handleReservation(new Request(endpoint, {
+    method: "OPTIONS",
+    headers: {
+      origin,
+      "access-control-request-headers": "content-type",
+      "access-control-request-method": "POST",
+    },
+  }), {});
+  assert.equal(preflight.status, 204);
+  assert.equal(preflight.headers.get("access-control-allow-origin"), origin);
+  assert.match(preflight.headers.get("access-control-allow-methods"), /POST/);
+
+  const DB = createD1();
+  const response = await handleReservation(new Request(endpoint, {
+    method: "POST",
+    headers: { "content-type": "application/json", origin },
+    body: JSON.stringify({ name: "张三", phone: "13800138000" }),
+  }), { DB });
+  assert.equal(response.status, 201);
+  assert.equal(response.headers.get("access-control-allow-origin"), origin);
+  assert.equal(DB.rows.length, 1);
+});
+
+test("rejects reservation requests from unapproved origins", async () => {
+  const response = await handleReservation(new Request(
+    "https://cheuk-nang-riverside.hezhenzhen.workers.dev/api/reservations",
+    {
+      method: "POST",
+      headers: { "content-type": "application/json", origin: "https://untrusted.example" },
+      body: JSON.stringify({ name: "张三", phone: "13800138000" }),
+    },
+  ), { DB: createD1() });
+
+  assert.equal(response.status, 403);
+  assert.equal(response.headers.get("access-control-allow-origin"), null);
+});
+
 test("silently accepts honeypot submissions without storing a record", async () => {
   const DB = createD1();
   const response = await handleReservation(
