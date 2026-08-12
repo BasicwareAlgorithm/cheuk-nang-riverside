@@ -14,7 +14,7 @@
       "zone_name": "cheuknangriverside.com"
     },
     {
-      "pattern": "records.cheuknangriverside.com/api/*",
+      "pattern": "admin.cheuknangriverside.com/api/*",
       "zone_name": "cheuknangriverside.com"
     }
   ],
