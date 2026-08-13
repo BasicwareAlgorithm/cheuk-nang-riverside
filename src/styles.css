@@ -426,7 +426,8 @@ footer { background: #041526; color: #fff; padding: 46px 0; }
   .home-tabs button:nth-child(3), .home-tabs button:nth-child(4) { border-top: 1px solid var(--line); }
   .home-detail { min-height: auto; }
   .home-copy h3 strong { font-size: 67px; }
-  .home-plan, .home-plan img { min-height: 290px; }
+  .home-plan { aspect-ratio: 16 / 9; min-height: 0; }
+  .home-plan img { height: auto; min-height: 0; object-fit: contain; }
   .benefits { padding: 100px 0; }
   .benefit-grid { grid-template-columns: 1fr; margin-top: 50px; }
   .benefit, .benefit:last-child { border-bottom: 1px solid rgba(132,99,53,.32); border-left: 0; border-right: 0; min-height: 190px; padding: 25px 0; }
