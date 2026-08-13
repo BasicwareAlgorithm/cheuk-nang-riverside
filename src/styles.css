@@ -184,8 +184,8 @@ section[id] { scroll-margin-top: 90px; }
 .home-copy h4 { font-family: "Songti SC",serif; font-size: 19px; font-weight: 400; letter-spacing: .1em; margin: 0 0 35px; }
 .home-copy ul { border-top: 1px solid var(--line); display: grid; grid-template-columns: 1fr 1fr; margin-bottom: 42px; }
 .home-copy li { border-bottom: 1px solid var(--line); font-size: 11px; letter-spacing: .08em; padding: 14px 0; }
-.home-plan { background: #f8f5ef; box-shadow: 0 24px 65px rgba(10,30,47,.1); min-height: 530px; overflow: hidden; }
-.home-plan img { animation: plan-in .7s ease both; height: 100%; min-height: 530px; object-fit: cover; width: 100%; }
+.home-plan { aspect-ratio: 16 / 9; background: #f8f5ef; box-shadow: 0 24px 65px rgba(10,30,47,.1); min-height: 0; overflow: hidden; }
+.home-plan img { animation: plan-in .7s ease both; height: auto; min-height: 0; object-fit: contain; width: 100%; }
 
 .benefits { background: #e8dfd2; padding: 130px 0; }
 .benefits-inner > .reveal:first-child { text-align: center; }
@@ -426,8 +426,6 @@ footer { background: #041526; color: #fff; padding: 46px 0; }
   .home-tabs button:nth-child(3), .home-tabs button:nth-child(4) { border-top: 1px solid var(--line); }
   .home-detail { min-height: auto; }
   .home-copy h3 strong { font-size: 67px; }
-  .home-plan { aspect-ratio: 16 / 9; min-height: 0; }
-  .home-plan img { height: auto; min-height: 0; object-fit: contain; }
   .benefits { padding: 100px 0; }
   .benefit-grid { grid-template-columns: 1fr; margin-top: 50px; }
   .benefit, .benefit:last-child { border-bottom: 1px solid rgba(132,99,53,.32); border-left: 0; border-right: 0; min-height: 190px; padding: 25px 0; }

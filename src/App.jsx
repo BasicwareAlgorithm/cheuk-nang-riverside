@@ -67,7 +67,7 @@ const unitTypes = [
     name: "拾光",
     area: "65",
     room: "一室两厅一卫",
-    image: "unit-a1.jpg",
+    image: "unit-a1-logo.jpg",
     features: ["通透格局", "客餐一体", "独立角厨", "飘窗主卧"],
   },
   {
@@ -75,7 +75,7 @@ const unitTypes = [
     name: "拾屿",
     area: "67",
     room: "两室两厅一卫",
-    image: "unit-a2.jpg",
+    image: "unit-a2-logo.jpg",
     features: ["全明空间", "科学布局", "阔绰通厅", "南向主卧"],
   },
   {
@@ -83,7 +83,7 @@ const unitTypes = [
     name: "澜岸",
     area: "88",
     room: "三室两厅一卫",
-    image: "unit-d5.jpg",
+    image: "unit-d5-logo.jpg",
     features: ["规整格局", "一体通厅", "飘景主卧", "独立明厨"],
   },
   {
@@ -91,7 +91,7 @@ const unitTypes = [
     name: "澜轩",
     area: "138",
     room: "三室两厅两卫",
-    image: "unit-f2.jpg",
+    image: "unit-f2-logo.jpg",
     features: ["独立玄关", "全能三房", "观景阔厅", "南北双阳台"],
   },
 ];
