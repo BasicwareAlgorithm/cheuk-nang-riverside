@@ -1,0 +1,74 @@
+:root { --tool-bg: #f4f0e8; --tool-ink: #102c43; --tool-gold: #b58a4b; }
+.cluster-page .article-hero { min-height: 650px; }
+.cluster-page .article-hero-copy { align-self: center; }
+.cluster-page .article-hero-media img { height: 100%; object-fit: cover; }
+.cluster-page .hero-deck { max-width: 720px; }
+.intent-bridge { color: #173043; background: #fff; border-top: 1px solid #e3ddd2; border-bottom: 1px solid #e3ddd2; }
+.intent-bridge-inner { display: grid; grid-template-columns: 150px 1fr 280px; gap: 30px; align-items: center; min-height: 132px; }
+.intent-bridge .bridge-label { color: #a77b3f; font-size: 10px; letter-spacing: .16em; }
+.intent-bridge h2 { color: #173043; font: 400 23px/1.45 "Songti SC", STSong, serif; margin: 0 0 8px; }
+.intent-bridge p { color: #62717a; font-size: 11px; line-height: 1.75; margin: 0; }
+.intent-bridge a { color: #7b5a2e; border-bottom: 1px solid currentColor; justify-self: end; padding-bottom: 6px; font-size: 11px; letter-spacing: .08em; }
+.decision-tool { background: var(--tool-bg); border-bottom: 1px solid #ddd5c7; padding: 58px 0; }
+.decision-tool-inner { display: grid; grid-template-columns: minmax(240px,.68fr) minmax(520px,1.32fr); gap: 68px; align-items: start; }
+.tool-copy > span { color: #8b6735; font-size: 9px; letter-spacing: .18em; }
+.tool-copy h2 { color: var(--tool-ink); font: 400 30px/1.45 "Songti SC", STSong, serif; margin: 12px 0 10px; }
+.tool-copy p { color: #60707b; font-size: 11px; line-height: 1.85; margin: 0; }
+.tool-panel { min-width: 0; background: #fff; border: 1px solid #ded8ce; padding: 26px; }
+.tool-options { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }
+.tool-options button { min-height: 72px; display: grid; gap: 5px; color: var(--tool-ink); text-align: left; background: #fff; border: 1px solid #cfd3d4; cursor: pointer; padding: 14px 16px; }
+.tool-options button:hover,.tool-options button:focus-visible { border-color: var(--tool-gold); outline: none; }
+.tool-options button[aria-pressed="true"] { color: #fff; background: var(--tool-ink); border-color: var(--tool-ink); }
+.tool-options strong { font-size: 13px; font-weight: 500; }
+.tool-options span { color: inherit; opacity: .68; font-size: 10px; line-height: 1.55; }
+.tool-result { border-top: 1px solid #ded8ce; margin-top: 20px; padding-top: 20px; }
+.tool-result[hidden] { display: none; }
+.tool-result > span { color: #8b6735; font-size: 9px; letter-spacing: .14em; }
+.tool-result h3 { color: var(--tool-ink); font: 400 23px/1.45 "Songti SC", STSong, serif; margin: 7px 0; }
+.tool-result p,.tool-result li { color: #596a75; font-size: 11px; line-height: 1.75; }
+.tool-result ul { margin: 10px 0 0; padding-left: 18px; }
+.tool-result .result-note { color: #7b8489; border-top: 1px solid #e1ddd5; margin-top: 14px; padding-top: 10px; font-size: 9px; }
+.tool-panel > .result-note { color: #7b8489; margin: 14px 0 0; font-size: 9px; line-height: 1.7; }
+.mini-lead { display: grid; grid-template-columns: 1fr auto; gap: 9px 12px; align-items: end; border-top: 1px solid #e1ddd5; margin-top: 18px; padding-top: 18px; }
+.mini-lead label:first-of-type { display: grid; gap: 6px; }
+.mini-lead label span { color: #5c6971; font-size: 9px; }
+.mini-lead input[type="tel"] { min-height: 44px; border: 1px solid #b9c0c3; padding: 0 12px; }
+.mini-lead button { min-height: 44px; color: #fff; background: var(--tool-ink); border: 0; cursor: pointer; padding: 0 18px; }
+.mini-lead .consent { grid-column: 1/-1; display: flex; gap: 6px; font-size: 9px; color: #6a757b; }
+.mini-lead .form-message { grid-column: 1/-1; margin: 0; color: #285f4a; font-size: 10px; }
+.calculator-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 14px; }
+.calculator-grid label { display: grid; gap: 6px; color: #53636d; font-size: 10px; }
+.calculator-grid input,.calculator-grid select { min-height: 44px; border: 1px solid #c1c7c9; background: #fff; padding: 0 11px; }
+.calculator-action { min-height: 46px; width: 100%; color: #fff; background: var(--tool-ink); border: 0; cursor: pointer; margin-top: 16px; }
+.calculator-result { display: grid; grid-template-columns: repeat(3,1fr); border-top: 1px solid #ded8ce; margin-top: 20px; padding-top: 18px; }
+.calculator-result div { border-right: 1px solid #e0ddd5; padding: 0 16px; }
+.calculator-result div:first-child { padding-left: 0; }
+.calculator-result div:last-child { border-right: 0; }
+.calculator-result span { color: #728089; font-size: 9px; }
+.calculator-result strong { display: block; color: var(--tool-ink); font: 400 20px/1.5 Georgia,serif; margin-top: 5px; }
+.checklist { display: grid; gap: 0; }
+.checklist label { min-height: 50px; display: flex; align-items: flex-start; gap: 10px; border-bottom: 1px solid #e3dfd7; padding: 13px 0; color: #475964; font-size: 11px; line-height: 1.65; }
+.checklist input { margin-top: 3px; accent-color: var(--tool-gold); }
+.checklist-progress { display: flex; justify-content: space-between; color: #6a777f; font-size: 10px; margin-bottom: 12px; }
+.checklist-progress strong { color: var(--tool-ink); }
+.tool-actions { display: flex; gap: 10px; margin-top: 16px; }
+.tool-actions button { min-height: 44px; color: #fff; background: var(--tool-ink); border: 0; cursor: pointer; padding: 0 18px; }
+.tool-actions button.secondary { color: var(--tool-ink); background: #fff; border: 1px solid #b9c0c3; }
+.cluster-page .article-body > h2 { scroll-margin-top: 90px; }
+.project-case { border: 1px solid #ded7ca; background: #f7f4ee; margin: 44px 0; padding: 28px 30px; }
+.project-case > span { color: #8c6839; font-size: 9px; letter-spacing: .14em; }
+.project-case h3 { font: 400 22px/1.45 "Songti SC",STSong,serif; margin: 9px 0; }
+.project-case p { margin: 0; }
+.project-case a { color: #76572f; text-decoration: underline; text-underline-offset: 4px; }
+.cluster-hub { min-height: 100vh; color: #173043; background: #f5f1e9; padding: 70px 0; }
+.cluster-hub h1 { font: 400 46px/1.25 "Songti SC",STSong,serif; margin: 0 0 14px; }
+.cluster-hub > .shell > p { color: #64727b; max-width: 760px; line-height: 1.8; }
+.cluster-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 1px; background: #d9d2c6; margin-top: 45px; border: 1px solid #d9d2c6; }
+.cluster-card { display: grid; min-height: 220px; color: #173043; background: #fff; padding: 30px; }
+.cluster-card span { color: #9b733b; font-size: 9px; letter-spacing: .14em; }
+.cluster-card h2 { font: 400 24px/1.5 "Songti SC",STSong,serif; margin: 12px 0; }
+.cluster-card p { color: #64727b; font-size: 11px; line-height: 1.8; }
+.cluster-card em { align-self: end; color: #7e5c2f; font-style: normal; font-size: 10px; }
+@media (max-width:980px){.intent-bridge-inner{grid-template-columns:1fr;gap:12px;padding-block:28px}.intent-bridge a{justify-self:start}.decision-tool-inner{grid-template-columns:1fr;gap:28px}.cluster-grid{grid-template-columns:1fr 1fr}}
+@media (max-width:700px){.cluster-page .article-hero{min-height:auto}.decision-tool{padding:40px 0}.tool-panel{padding:20px 16px}.tool-options,.calculator-grid,.calculator-result{grid-template-columns:1fr}.calculator-result div{border-right:0;border-bottom:1px solid #e0ddd5;padding:10px 0}.mini-lead{grid-template-columns:1fr}.mini-lead button,.mini-lead .consent,.mini-lead .form-message{grid-column:1}.cluster-grid{grid-template-columns:1fr}.cluster-hub{padding:45px 0}.cluster-hub h1{font-size:36px}.cluster-page .fact-table-wrap{max-width:calc(100vw - 40px);overflow-x:auto;-webkit-overflow-scrolling:touch}.cluster-page .fact-table{min-width:560px}}
+@media print{.site-header,.mobile-conversion,.mini-lead,.related-section,.article-aside{display:none!important}.article-layout{display:block}.decision-tool{background:#fff}.cluster-page{padding:0}.tool-panel{border:0;padding:0}}

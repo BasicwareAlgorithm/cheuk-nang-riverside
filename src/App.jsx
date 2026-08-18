@@ -21,13 +21,14 @@ function asset(path) {
 }
 
 const navLinks = [
-  ["品牌", "heritage"],
-  ["项目", "project"],
-  ["区位", "location"],
-  ["生活", "lifestyle"],
-  ["影像", "film"],
-  ["户型", "homes"],
-  ["联系", "contact"],
+  ["品牌", "#heritage"],
+  ["项目", "#project"],
+  ["区位", "#location"],
+  ["生活", "#lifestyle"],
+  ["影像", "#film"],
+  ["户型", "#homes"],
+  ["资讯", "/insights/"],
+  ["联系", "#contact"],
 ];
 
 const lifestyleScenes = [
@@ -117,7 +118,7 @@ function Reveal({ children, className = "", delay = 0 }) {
 
 function Brand({ light = false }) {
   return (
-    <a className={`brand ${light ? "is-light" : ""}`} href="#top" aria-label="卓能河畔轩首页">
+    <a className={`brand ${light ? "is-light" : ""}`} href="/#top" aria-label="卓能河畔轩首页">
       <span className="brand-mark" aria-hidden="true">
         <img src="/assets/brand/cheuk-nang-riverside-mark.png" alt="" />
       </span>
@@ -131,7 +132,7 @@ function Header({ solid, open, setOpen, onBooking }) {
     <header className={`site-header ${solid || open ? "is-solid" : ""}`}>
       <Brand light={!solid && !open} />
       <nav aria-label="主导航">
-        {navLinks.map(([label, id]) => <a href={`#${id}`} key={id}>{label}</a>)}
+        {navLinks.map(([label, href]) => <a href={href} key={href}>{label}</a>)}
       </nav>
       <a className="header-call" href="tel:057186309988"><span>品鉴热线</span><strong>0571 8630 9988</strong></a>
       <button className="menu-toggle" type="button" onClick={() => setOpen((value) => !value)} aria-expanded={open} aria-label={open ? "关闭导航" : "打开导航"} data-testid="mobile-menu-button">
@@ -139,13 +140,13 @@ function Header({ solid, open, setOpen, onBooking }) {
       </button>
       <div className={`mobile-menu ${open ? "is-open" : ""}`}>
         <p>CHEUK NANG RIVERSIDE</p>
-        {navLinks.map(([label, id], index) => (
-          <a href={`#${id}`} key={id} onClick={() => setOpen(false)}>
+        {navLinks.map(([label, href], index) => (
+          <a href={href} key={href} onClick={() => setOpen(false)}>
             <span>{String(index + 1).padStart(2, "0")}</span><strong>{label}</strong><ArrowRight size={20} />
           </a>
         ))}
         <button className="mobile-booking" type="button" onClick={() => { setOpen(false); onBooking(); }}>
-          <span>08</span><strong>预约参观</strong><ArrowRight size={20} />
+          <span>09</span><strong>预约参观</strong><ArrowRight size={20} />
         </button>
       </div>
     </header>
