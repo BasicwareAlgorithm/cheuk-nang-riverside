@@ -94,3 +94,12 @@ test("mounts a complete prebuilt SEO content bundle without changing its HTML", 
   assert.equal(await readFile(path.join(root, "dist", "client", "seo-assets", "base.css"), "utf8"), "body{color:#123}");
   assert.match(await readFile(path.join(root, "dist", "client", "sitemap.xml"), "utf8"), /insights\/guide-one/);
 });
+
+test("published article lead forms submit to the existing reservation API", async () => {
+  const clusterScript = await readFile(new URL("../content/articles/production-static/seo-assets/cluster.js", import.meta.url), "utf8");
+  const chongxianArticle = await readFile(new URL("../content/articles/production-static/insights/chongxian-home-buying-decision-guide/index.html", import.meta.url), "utf8");
+  for (const source of [clusterScript, chongxianArticle]) {
+    assert.match(source, /fetch\('\/api\/reservations'/);
+    assert.doesNotMatch(source, /正式部署接通接口后/);
+  }
+});

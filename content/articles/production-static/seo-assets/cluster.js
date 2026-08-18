@@ -62,9 +62,30 @@
   });
 
   document.querySelectorAll('[data-print]').forEach((button) => button.addEventListener('click', () => window.print()));
-  document.querySelectorAll('[data-preview-form]').forEach((form) => form.addEventListener('submit', (event) => {
+  document.querySelectorAll('[data-preview-form]').forEach((form) => form.addEventListener('submit', async (event) => {
     event.preventDefault();
     if (!form.reportValidity()) return;
-    form.querySelector('.form-message').textContent = '已记录。正式部署接通接口后，将按你的选择发送资料。';
+    const message = form.querySelector('.form-message');
+    const button = form.querySelector('[type="submit"]');
+    const data = new FormData(form);
+    const name = String(data.get('name') || data.get('offer') || '文章资料领取').trim().slice(0, 30);
+    const phone = String(data.get('phone') || '').trim();
+    button.disabled = true;
+    message.textContent = '正在提交…';
+    try {
+      const response = await fetch('/api/reservations', {
+        method: 'POST',
+        headers: {'content-type': 'application/json'},
+        body: JSON.stringify({name, phone, company: ''}),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.message || '提交失败，请稍后再试。');
+      form.elements.phone.value = '';
+      message.textContent = '提交成功，工作人员会联系您发送所选资料。';
+    } catch (error) {
+      message.textContent = error.message || '提交失败，请稍后再试。';
+    } finally {
+      button.disabled = false;
+    }
   }));
 })();
