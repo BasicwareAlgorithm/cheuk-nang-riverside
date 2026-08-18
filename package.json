@@ -5,13 +5,14 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && node scripts/build-articles.mjs && node scripts/prepare-sites-build.mjs",
+    "build": "vite build && node scripts/build-articles.mjs && node scripts/build-locales.mjs && node scripts/prepare-sites-build.mjs",
     "build:offline": "npm run build && node scripts/build-offline.mjs",
     "preview": "vite preview",
-    "test": "node --test tests/articles-build.test.mjs tests/mortgage.test.mjs tests/pages-admin.test.mjs tests/pages-reservation-proxy.test.mjs tests/sites-worker.test.mjs tests/video-origin.test.mjs",
+    "test": "node --test tests/articles-build.test.mjs tests/locales-build.test.mjs tests/mortgage.test.mjs tests/pages-admin.test.mjs tests/pages-reservation-proxy.test.mjs tests/sites-worker.test.mjs tests/video-origin.test.mjs",
     "test:offline": "node --test tests/offline-bundle.test.mjs",
     "test:sites": "node --test tests/sites-worker.test.mjs",
-    "seo:push-baidu": "node scripts/push-baidu.mjs"
+    "seo:push-baidu": "node scripts/push-baidu.mjs",
+    "locales:refresh-en": "node scripts/prepare-localization-cache.mjs"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",
@@ -19,5 +20,9 @@
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "vite": "6.4.2"
+  },
+  "devDependencies": {
+    "cheerio": "^1.2.0",
+    "opencc-js": "^1.4.1"
   }
 }

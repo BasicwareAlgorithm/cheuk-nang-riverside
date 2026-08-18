@@ -8,6 +8,13 @@ import {
   X,
   List,
 } from "@phosphor-icons/react";
+import {
+  ACTIVE_LOCALE,
+  localeLabels,
+  localizedHref,
+  switchLocalePath,
+  tr,
+} from "./locales.js";
 
 const MATERIAL = "/assets/ppt";
 const PROJECT_FILM_URL = `https://media.cheuknangriverside.com${MATERIAL}/project-film.mp4`;
@@ -118,12 +125,29 @@ function Reveal({ children, className = "", delay = 0 }) {
 
 function Brand({ light = false }) {
   return (
-    <a className={`brand ${light ? "is-light" : ""}`} href="/#top" aria-label="卓能河畔轩首页">
+    <a className={`brand ${light ? "is-light" : ""}`} href={localizedHref("/#top")} aria-label={tr("卓能河畔轩首页")}>
       <span className="brand-mark" aria-hidden="true">
         <img src="/assets/brand/cheuk-nang-riverside-mark.png" alt="" />
       </span>
-      <span><strong>卓能·河畔轩</strong><small>CHEUK NANG RIVERSIDE</small></span>
+      <span><strong>{tr("卓能·河畔轩")}</strong><small>CHEUK NANG RIVERSIDE</small></span>
     </a>
+  );
+}
+
+function LanguageSwitcher({ compact = false }) {
+  return (
+    <nav className={`language-switcher ${compact ? "is-compact" : ""}`} aria-label={tr("切换语言")}>
+      {localeLabels.map((item) => (
+        <a
+          className={item.locale === ACTIVE_LOCALE ? "is-active" : ""}
+          href={switchLocalePath(item.locale)}
+          hrefLang={item.locale}
+          lang={item.locale}
+          key={item.locale}
+          onClick={() => globalThis.localStorage?.setItem("cnr-preferred-locale", item.locale)}
+        >{compact ? item.short : item.label}</a>
+      ))}
+    </nav>
   );
 }
 
@@ -131,23 +155,24 @@ function Header({ solid, open, setOpen, onBooking }) {
   return (
     <header className={`site-header ${solid || open ? "is-solid" : ""}`}>
       <Brand light={!solid && !open} />
-      <nav aria-label="主导航">
-        {navLinks.map(([label, href]) => <a href={href} key={href}>{label}</a>)}
+      <nav aria-label={tr("主导航")}>
+        {navLinks.map(([label, href]) => <a href={localizedHref(href)} key={href}>{tr(label)}</a>)}
       </nav>
-      <a className="header-call" href="tel:057186309988"><span>品鉴热线</span><strong>0571 8630 9988</strong></a>
-      <button className="menu-toggle" type="button" onClick={() => setOpen((value) => !value)} aria-expanded={open} aria-label={open ? "关闭导航" : "打开导航"} data-testid="mobile-menu-button">
+      <div className="header-tools"><LanguageSwitcher compact /><a className="header-call" href="tel:057186309988"><span>{tr("品鉴热线")}</span><strong>0571 8630 9988</strong></a></div>
+      <button className="menu-toggle" type="button" onClick={() => setOpen((value) => !value)} aria-expanded={open} aria-label={tr(open ? "关闭导航" : "打开导航")} data-testid="mobile-menu-button">
         {open ? <X size={25} /> : <List size={27} />}
       </button>
       <div className={`mobile-menu ${open ? "is-open" : ""}`}>
         <p>CHEUK NANG RIVERSIDE</p>
         {navLinks.map(([label, href], index) => (
-          <a href={href} key={href} onClick={() => setOpen(false)}>
-            <span>{String(index + 1).padStart(2, "0")}</span><strong>{label}</strong><ArrowRight size={20} />
+          <a href={localizedHref(href)} key={href} onClick={() => setOpen(false)}>
+            <span>{String(index + 1).padStart(2, "0")}</span><strong>{tr(label)}</strong><ArrowRight size={20} />
           </a>
         ))}
         <button className="mobile-booking" type="button" onClick={() => { setOpen(false); onBooking(); }}>
-          <span>09</span><strong>预约参观</strong><ArrowRight size={20} />
+          <span>09</span><strong>{tr("预约参观")}</strong><ArrowRight size={20} />
         </button>
+        <LanguageSwitcher />
       </div>
     </header>
   );
@@ -156,15 +181,15 @@ function Header({ solid, open, setOpen, onBooking }) {
 function Hero() {
   return (
     <section className="hero" id="top">
-      <img className="hero-image" src={asset(`${MATERIAL}/river-view.jpeg`)} alt="卓能河畔轩水岸实景" fetchPriority="high" />
+      <img className="hero-image" src={asset(`${MATERIAL}/river-view.jpeg`)} alt={tr("卓能河畔轩水岸实景")} fetchPriority="high" />
       <div className="hero-veil" />
       <div className="hero-line hero-line-a" /><div className="hero-line hero-line-b" />
       <div className="hero-copy">
-        <p className="hero-kicker">卓能集团 · 首献杭州</p>
-        <h1><span>卓能</span><em>·</em><span>河畔轩</span></h1>
+        <p className="hero-kicker">{tr("卓能集团 · 首献杭州")}</p>
+        <h1><span>{tr("卓能")}</span><em>·</em><span>{tr("河畔轩")}</span></h1>
         <div className="hero-rule" />
-        <h2>轻享杭州的丰盈生活</h2>
-        <p className="hero-meta">临平崇贤 · 地铁口 · 公园旁 · 建面约65-138㎡百万级实景现房</p>
+        <h2>{tr("轻享杭州的丰盈生活")}</h2>
+        <p className="hero-meta">{tr("临平崇贤 · 地铁口 · 公园旁 · 建面约65-138㎡百万级实景现房")}</p>
       </div>
       <a className="hero-scroll" href="#heritage"><span>SCROLL</span><ArrowDown size={17} /></a>
       <div className="hero-side-word" aria-hidden="true">RIVERSIDE</div>
@@ -185,16 +210,16 @@ function SectionTitle({ index, en, title, intro, light = false }) {
 function Heritage() {
   return (
     <section className="heritage" id="heritage">
-      <img className="heritage-bg" src={asset(`${MATERIAL}/group-estate.jpeg`)} alt="卓能集团香港物业实景" />
+      <img className="heritage-bg" src={asset(`${MATERIAL}/group-estate.jpeg`)} alt={tr("卓能集团香港物业实景")} />
       <div className="heritage-shade" />
       <div className="shell heritage-inner">
         <Reveal>
-          <SectionTitle index="01" en="GROUP HERITAGE" title="实力港企 卓能集团首献杭州" light />
-          <p className="heritage-copy">卓能集团拥有逾60载深厚企业底蕴。1973年，集团商务体系于香港有限公司成立；从香港到内地，始终秉承“慎思力先”的理念。</p>
+          <SectionTitle index="01" en="GROUP HERITAGE" title={tr("实力港企 卓能集团首献杭州")} light />
+          <p className="heritage-copy">{tr("卓能集团拥有逾60载深厚企业底蕴。1973年，集团商务体系于香港有限公司成立；从香港到内地，始终秉承“慎思力先”的理念。")}</p>
         </Reveal>
         <div className="heritage-stats">
           {[['60+','载企业底蕴'],['1973','港交所上市'],['3','大市场布局']].map(([value, label], index) => (
-            <Reveal className="heritage-stat" delay={index * 90} key={label}><strong>{value}</strong><span>{label}</span></Reveal>
+            <Reveal className="heritage-stat" delay={index * 90} key={label}><strong>{value}</strong><span>{tr(label)}</span></Reveal>
           ))}
         </div>
       </div>
@@ -208,19 +233,19 @@ function Project() {
     <section className="project paper" id="project">
       <div className="shell project-grid">
         <Reveal className="project-copy">
-          <SectionTitle index="02" en="PROJECT OVERVIEW" title={<><span>大城北崛起</span><span>崇贤正当时</span></>} />
-          <h3>你在杭州的第一个家</h3>
-          <p>项目位于杭州临平区崇贤板块核心，踞守绕城内稀缺价格洼地。地铁、商业、教育、医疗与山水生态环伺，以主城级配套和亲民门槛，打造品质生活新标杆。</p>
+          <SectionTitle index="02" en="PROJECT OVERVIEW" title={<><span>{tr("大城北崛起")}</span><span>{tr("崇贤正当时")}</span></>} />
+          <h3>{tr("你在杭州的第一个家")}</h3>
+          <p>{tr("项目位于杭州临平区崇贤板块核心，踞守绕城内稀缺价格洼地。地铁、商业、教育、医疗与山水生态环伺，以主城级配套和亲民门槛，打造品质生活新标杆。")}</p>
           <dl>
-            <div><dt>12.3<small>万㎡</small></dt><dd>项目总建筑面积</dd></div>
-            <div><dt>779<small>个</small></dt><dd>规划车位</dd></div>
-            <div><dt>5<small>#</small></dt><dd>盛景弯邸 首开在即</dd></div>
+            <div><dt>{ACTIVE_LOCALE === "en" ? "123,000" : "12.3"}<small>{tr("万㎡")}</small></dt><dd>{tr("项目总建筑面积")}</dd></div>
+            <div><dt>779<small>{tr("个")}</small></dt><dd>{tr("规划车位")}</dd></div>
+            <div><dt>5<small>#</small></dt><dd>{tr("盛景弯邸 首开在即")}</dd></div>
           </dl>
-          <a className="text-link" href="#film">观看项目影片 <ArrowRight size={18} /></a>
+          <a className="text-link" href="#film">{tr("观看项目影片")} <ArrowRight size={18} /></a>
         </Reveal>
         <Reveal className="project-visual" delay={120}>
-          <figure className="project-main"><img src={asset(`${MATERIAL}/community-aerial.jpg`)} alt="卓能河畔轩社区航拍实景" /><figcaption>项目航拍实景</figcaption></figure>
-          <figure className="project-inset"><img src={asset(`${MATERIAL}/facade.jpg`)} alt="卓能河畔轩建筑实景" /></figure>
+          <figure className="project-main"><img src={asset(`${MATERIAL}/community-aerial.jpg`)} alt={tr("卓能河畔轩社区航拍实景")} /><figcaption>{tr("项目航拍实景")}</figcaption></figure>
+          <figure className="project-inset"><img src={asset(`${MATERIAL}/facade.jpg`)} alt={tr("卓能河畔轩建筑实景")} /></figure>
           <span className="project-ring" aria-hidden="true" />
         </Reveal>
       </div>
@@ -231,12 +256,12 @@ function Project() {
 function HangzhouChapter() {
   return (
     <section className="chapter-hangzhou">
-      <img src={asset(`${MATERIAL}/hangzhou-city-clean.jpg`)} alt="杭州城市与水系航拍" />
+      <img src={asset(`${MATERIAL}/hangzhou-city-clean.jpg`)} alt={tr("杭州城市与水系航拍")} />
       <div className="chapter-overlay" />
       <Reveal className="chapter-copy">
         <p>PART.2 · ENJOY HANGZHOU</p>
-        <h2>纵享<span>杭州</span>丰盈</h2>
-        <strong>大城丰盈 · 尽享暮景<br />千亿大城北，崇贤新城乘势而上</strong>
+        <h2>{tr("纵享")}<span>{tr("杭州")}</span>{tr("丰盈")}</h2>
+        <strong>{tr("大城丰盈 · 尽享暮景\n千亿大城北，崇贤新城乘势而上").split("\n").map((line, index) => <span key={line}>{line}{index === 0 && <br />}</span>)}</strong>
       </Reveal>
     </section>
   );
@@ -246,18 +271,18 @@ function Location() {
   return (
     <section className="location paper" id="location">
       <div className="shell">
-        <SectionTitle index="03" en="LOCATION & CONNECTION" title="多维路网 通达全城" intro="邻立拱墅，全维配套触手可及；一城繁华与自然资源，在日常半径内从容抵达。" />
+        <SectionTitle index="03" en="LOCATION & CONNECTION" title={tr("多维路网 通达全城")} intro={tr("邻立拱墅，全维配套触手可及；一城繁华与自然资源，在日常半径内从容抵达。")} />
         <div className="location-grid">
-          <Reveal className="map-frame"><img src={asset(`${MATERIAL}/location-map.jpg`)} alt="卓能河畔轩区位与城市配套图" /></Reveal>
+          <Reveal className="map-frame"><img src={asset(`${MATERIAL}/location-map.jpg`)} alt={tr("卓能河畔轩区位与城市配套图")} /></Reveal>
           <div className="location-facts">
             <Reveal className="location-fact">
-              <Train size={27} weight="thin" /><span>约400m直线距离</span><h3>地铁15号线站口</h3><p>约30分钟直达杭州东，串联运河新城、钱江新城与钱江世纪城。</p>
+              <Train size={27} weight="thin" /><span>{tr("约400m直线距离")}</span><h3>{tr("地铁15号线站口")}</h3><p>{tr("约30分钟直达杭州东，串联运河新城、钱江新城与钱江世纪城。")}</p>
             </Reveal>
             <Reveal className="location-fact" delay={80}>
-              <Buildings size={27} weight="thin" /><span>约700m直线距离</span><h3>秋石高架</h3><p>快速路便捷通达全城，衔接主城繁华生活圈。</p>
+              <Buildings size={27} weight="thin" /><span>{tr("约700m直线距离")}</span><h3>{tr("秋石高架")}</h3><p>{tr("快速路便捷通达全城，衔接主城繁华生活圈。")}</p>
             </Reveal>
             <Reveal className="location-fact" delay={160}>
-              <MapPin size={27} weight="thin" /><span>商业就在家门口</span><h3>约24万方花园城</h3><p>项目1.5km范围内，招商花园城、上亿广场等大型综合体举步可达。</p>
+              <MapPin size={27} weight="thin" /><span>{tr("商业就在家门口")}</span><h3>{tr("约24万方花园城")}</h3><p>{tr("项目1.5km范围内，招商花园城、上亿广场等大型综合体举步可达。")}</p>
             </Reveal>
           </div>
         </div>
@@ -270,16 +295,16 @@ function Lifestyle({ active, setActive }) {
   const scene = lifestyleScenes[active];
   return (
     <section className="lifestyle" id="lifestyle">
-      <img key={scene.image} className="lifestyle-bg" src={asset(`${MATERIAL}/${scene.image}`)} alt={scene.title} />
+      <img key={scene.image} className="lifestyle-bg" src={asset(`${MATERIAL}/${scene.image}`)} alt={tr(scene.title)} />
       <div className="lifestyle-shade" />
-      <div className="lifestyle-head"><span>04</span><p>LIFESTYLE</p><h2>全维配套 品质生活</h2></div>
+      <div className="lifestyle-head"><span>04</span><p>LIFESTYLE</p><h2>{tr("全维配套 品质生活")}</h2></div>
       <div className="lifestyle-content">
-        <p>{scene.en}</p><h3>{scene.title}</h3><strong>{scene.copy}</strong>
+        <p>{scene.en}</p><h3>{tr(scene.title)}</h3><strong>{tr(scene.copy)}</strong>
       </div>
       <div className="scene-tabs">
         {lifestyleScenes.map((item, index) => (
           <button className={index === active ? "is-active" : ""} type="button" onMouseEnter={() => setActive(index)} onFocus={() => setActive(index)} onClick={() => setActive(index)} key={item.no}>
-            <span>{item.no}</span><strong>{item.title}</strong><i />
+            <span>{item.no}</span><strong>{tr(item.title)}</strong><i />
           </button>
         ))}
       </div>
@@ -291,7 +316,7 @@ function Film() {
   return (
     <section className="film" id="film">
       <div className="film-title shell">
-        <SectionTitle index="05" en="PROJECT FILM" title="造代升级 静候新生代" intro="实景现房，一所见所得；全面升级，一立面景观焕新；品质可靠，一港企标准保障。" light />
+        <SectionTitle index="05" en="PROJECT FILM" title={tr("造代升级 静候新生代")} intro={tr("实景现房，一所见所得；全面升级，一立面景观焕新；品质可靠，一港企标准保障。")} light />
       </div>
       <Reveal className="film-frame">
         <video controls playsInline preload="metadata" poster={asset(`${MATERIAL}/interior-panorama.jpg`)}>
@@ -308,21 +333,21 @@ function Homes({ active, setActive }) {
   return (
     <section className="homes paper" id="homes">
       <div className="shell">
-        <SectionTitle index="06" en="HOME COLLECTION" title="全能户型 尽享“满配”人生" intro="5#盛景弯邸，建面约65-138㎡全能户型，以紧凑尺度承载丰盛生活。" />
-        <div className="home-tabs" role="tablist" aria-label="户型选择">
+        <SectionTitle index="06" en="HOME COLLECTION" title={tr("全能户型 尽享“满配”人生")} intro={tr("5#盛景弯邸，建面约65-138㎡全能户型，以紧凑尺度承载丰盛生活。")} />
+        <div className="home-tabs" role="tablist" aria-label={tr("户型选择")}>
           {unitTypes.map((item, index) => (
             <button type="button" role="tab" aria-selected={index === active} className={index === active ? "is-active" : ""} onClick={() => setActive(index)} key={item.code}>
-              <span>{item.code}</span><strong>{item.name}</strong><em>约{item.area}㎡</em>
+              <span>{item.code}</span><strong>{tr(item.name)}</strong><em>{tr("约")}{item.area}{tr("㎡")}</em>
             </button>
           ))}
         </div>
         <div className="home-detail">
           <Reveal className="home-copy" key={`${unit.code}-copy`}>
-            <p>{unit.code} · {unit.name}</p><h3>约 <strong>{unit.area}</strong><small>㎡</small></h3><h4>{unit.room}</h4>
-            <ul>{unit.features.map((feature) => <li key={feature}>{feature}</li>)}</ul>
-            <a className="text-link" href="#contact">预约品鉴 <ArrowRight size={18} /></a>
+            <p>{unit.code} · {tr(unit.name)}</p><h3>{tr("约")}<strong>{unit.area}</strong><small>{tr("㎡")}</small></h3><h4>{tr(unit.room)}</h4>
+            <ul>{unit.features.map((feature) => <li key={feature}>{tr(feature)}</li>)}</ul>
+            <a className="text-link" href="#contact">{tr("预约品鉴")} <ArrowRight size={18} /></a>
           </Reveal>
-          <Reveal className="home-plan" key={`${unit.code}-plan`} delay={90}><img src={asset(`${MATERIAL}/${unit.image}`)} alt={`${unit.code}${unit.name}约${unit.area}平方米户型图`} /></Reveal>
+          <Reveal className="home-plan" key={`${unit.code}-plan`} delay={90}><img src={asset(`${MATERIAL}/${unit.image}`)} alt={`${unit.code} ${tr(unit.name)} ${tr("约")}${unit.area}${tr("㎡")}`} /></Reveal>
         </div>
       </div>
     </section>
@@ -338,8 +363,8 @@ function Benefits() {
   return (
     <section className="benefits">
       <div className="shell benefits-inner">
-        <Reveal><p>THREE VALUE PROPOSITIONS</p><h2>三大利 诚意首开</h2><span>轻享杭州的丰盈生活</span></Reveal>
-        <div className="benefit-grid">{items.map(([value, title], index) => <Reveal className="benefit" delay={index * 90} key={title}><span>0{index + 1}</span><p>{title}</p><strong>{value}</strong></Reveal>)}</div>
+        <Reveal><p>THREE VALUE PROPOSITIONS</p><h2>{tr("三大利 诚意首开")}</h2><span>{tr("轻享杭州的丰盈生活")}</span></Reveal>
+        <div className="benefit-grid">{items.map(([value, title], index) => <Reveal className="benefit" delay={index * 90} key={title}><span>0{index + 1}</span><p>{tr(title)}</p><strong>{tr(value)}</strong></Reveal>)}</div>
       </div>
     </section>
   );
@@ -348,19 +373,19 @@ function Benefits() {
 function Contact({ onBooking }) {
   return (
     <section className="contact" id="contact">
-      <img src={asset(`${MATERIAL}/contact-clean.jpg`)} alt="杭州城市天际线" />
+      <img src={asset(`${MATERIAL}/contact-clean.jpg`)} alt={tr("杭州城市天际线")} />
       <div className="contact-shade" />
       <div className="shell contact-inner">
         <Reveal>
           <p>CHEUK NANG GROUP · HANGZHOU</p>
-          <h2>卓能集团 · 首献杭州</h2>
-          <span>临平崇贤 · 地铁口 · 公园旁 · 建面约65-138㎡百万级实景现房</span>
+          <h2>{tr("卓能集团 · 首献杭州")}</h2>
+          <span>{tr("临平崇贤 · 地铁口 · 公园旁 · 建面约65-138㎡百万级实景现房")}</span>
         </Reveal>
         <Reveal className="contact-actions" delay={100}>
-          <p>品鉴热线</p><a className="phone-link" href="tel:057186309988">0571 <strong>86309988</strong></a>
-          <span><MapPin size={17} />卓能河畔轩销售中心</span>
+          <p>{tr("品鉴热线")}</p><a className="phone-link" href="tel:057186309988">0571 <strong>86309988</strong></a>
+          <span><MapPin size={17} />{tr("卓能河畔轩销售中心")}</span>
           <button className="contact-booking" type="button" onClick={onBooking}>
-            <span>预约参观</span><ArrowRight size={18} />
+            <span>{tr("预约参观")}</span><ArrowRight size={18} />
           </button>
         </Reveal>
       </div>
@@ -399,12 +424,12 @@ function BookingModal({ open, onClose }) {
 
     if (name.length < 2 || name.length > 30) {
       setStatus("error");
-      setMessage("请输入2至30个字符的姓名。");
+      setMessage(tr("请输入2至30个字符的姓名。"));
       return;
     }
     if (!PHONE_PATTERN.test(phone)) {
       setStatus("error");
-      setMessage("请输入正确的中国大陆手机号码。");
+      setMessage(tr("请输入正确的中国大陆手机号码。"));
       return;
     }
 
@@ -425,13 +450,13 @@ function BookingModal({ open, onClose }) {
         signal: controller.signal,
       });
       const result = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(result.message || "提交失败，请稍后再试。");
+      if (!response.ok) throw new Error(result.message || tr("提交失败，请稍后再试。"));
       form.reset();
       setStatus("success");
-      setMessage("预约已提交，置业顾问会尽快与您联系。");
+      setMessage(tr("预约已提交，置业顾问会尽快与您联系。"));
     } catch (error) {
       setStatus("error");
-      setMessage(error.name === "AbortError" ? "网络响应超时，请稍后再试。" : error.message);
+      setMessage(error.name === "AbortError" ? tr("网络响应超时，请稍后再试。") : error.message);
     } finally {
       window.clearTimeout(timeout);
     }
@@ -440,45 +465,74 @@ function BookingModal({ open, onClose }) {
   return (
     <div className="booking-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
       <section className="booking-dialog" role="dialog" aria-modal="true" aria-labelledby="booking-title">
-        <button className="booking-close" type="button" onClick={onClose} aria-label="关闭预约表单"><X size={22} /></button>
+        <button className="booking-close" type="button" onClick={onClose} aria-label={tr("关闭预约表单")}><X size={22} /></button>
         <div className="booking-intro">
           <p>PRIVATE VIEWING</p>
-          <h2 id="booking-title">预约参观</h2>
-          <span>留下联系方式，置业顾问将与您确认到访时间。</span>
+          <h2 id="booking-title">{tr("预约参观")}</h2>
+          <span>{tr("留下联系方式，置业顾问将与您确认到访时间。")}</span>
         </div>
         {status === "success" ? (
           <div className="booking-success" role="status">
             <span aria-hidden="true">✓</span>
-            <h3>提交成功</h3>
+            <h3>{tr("提交成功")}</h3>
             <p>{message}</p>
-            <button type="button" onClick={onClose}>完成</button>
+            <button type="button" onClick={onClose}>{tr("完成")}</button>
           </div>
         ) : (
           <form className="booking-form" onSubmit={handleSubmit}>
             <label>
-              <span>姓名</span>
-              <input ref={nameRef} name="name" type="text" autoComplete="name" minLength="2" maxLength="30" placeholder="请输入您的姓名" required />
+              <span>{tr("姓名")}</span>
+              <input ref={nameRef} name="name" type="text" autoComplete="name" minLength="2" maxLength="30" placeholder={tr("请输入您的姓名")} required />
             </label>
             <label>
-              <span>手机号码</span>
-              <input name="phone" type="tel" inputMode="tel" autoComplete="tel" maxLength="20" placeholder="请输入您的手机号码" required />
+              <span>{tr("手机号码")}</span>
+              <input name="phone" type="tel" inputMode="tel" autoComplete="tel" maxLength="20" placeholder={tr("请输入您的手机号码")} required />
             </label>
             <label className="booking-honeypot" aria-hidden="true">
-              <span>公司</span><input name="company" type="text" tabIndex="-1" autoComplete="off" />
+              <span>{tr("公司")}</span><input name="company" type="text" tabIndex="-1" autoComplete="off" />
             </label>
             <label className="booking-consent">
               <input name="consent" type="checkbox" required />
-              <span>我同意销售人员使用上述信息联系我，仅用于预约参观与项目咨询。</span>
+              <span>{tr("我同意销售人员使用上述信息联系我，仅用于预约参观与项目咨询。")}</span>
             </label>
             {message && <p className="booking-message" role="alert">{message}</p>}
             <button className="booking-submit" type="submit" disabled={status === "submitting"}>
-              <span>{status === "submitting" ? "正在提交" : "确认预约"}</span><ArrowRight size={18} />
+              <span>{tr(status === "submitting" ? "正在提交" : "确认预约")}</span><ArrowRight size={18} />
             </button>
-            <a className="booking-phone" href="tel:057186309988">或致电品鉴热线 0571 8630 9988</a>
+            <a className="booking-phone" href="tel:057186309988">{tr("或致电品鉴热线 0571 8630 9988")}</a>
           </form>
         )}
       </section>
     </div>
+  );
+}
+
+function LanguageSuggestion() {
+  const [suggestedLocale, setSuggestedLocale] = useState("");
+
+  useEffect(() => {
+    if (globalThis.localStorage?.getItem("cnr-language-suggestion-dismissed")) return;
+    if (globalThis.localStorage?.getItem("cnr-preferred-locale")) return;
+    const browserLocale = globalThis.navigator?.languages?.[0] || globalThis.navigator?.language || "";
+    if (ACTIVE_LOCALE === "zh-CN" && /^zh-(?:HK|MO|TW)/i.test(browserLocale)) setSuggestedLocale("zh-HK");
+    else if (ACTIVE_LOCALE === "zh-CN" && browserLocale && !/^zh\b/i.test(browserLocale)) setSuggestedLocale("en");
+  }, []);
+
+  if (!suggestedLocale) return null;
+  const dismiss = () => {
+    globalThis.localStorage?.setItem("cnr-language-suggestion-dismissed", "1");
+    setSuggestedLocale("");
+  };
+  const label = suggestedLocale === "zh-HK" ? tr("选择繁體中文") : tr("选择英文");
+
+  return (
+    <aside className="language-suggestion" aria-live="polite">
+      <p>{tr("根据您的浏览器语言，我们为您准备了更合适的版本。")}</p>
+      <div>
+        <a href={switchLocalePath(suggestedLocale)} onClick={() => globalThis.localStorage?.setItem("cnr-preferred-locale", suggestedLocale)}>{label}</a>
+        <button type="button" onClick={dismiss}>{tr("暂不切换")}</button>
+      </div>
+    </aside>
   );
 }
 
@@ -633,6 +687,10 @@ function SiteApp() {
   const closeBooking = useCallback(() => setBookingOpen(false), []);
 
   useEffect(() => {
+    document.documentElement.lang = ACTIVE_LOCALE;
+  }, []);
+
+  useEffect(() => {
     let frame = 0;
     const onScroll = () => {
       cancelAnimationFrame(frame);
@@ -664,7 +722,7 @@ function SiteApp() {
       <div className="page-progress" aria-hidden="true" />
       <Header solid={solid} open={menuOpen} setOpen={setMenuOpen} onBooking={openBooking} />
       <button className="booking-float" type="button" onClick={openBooking}>
-        <small>PRIVATE VIEWING</small><span>预约参观</span><ArrowRight size={17} />
+        <small>PRIVATE VIEWING</small><span>{tr("预约参观")}</span><ArrowRight size={17} />
       </button>
       <main>
         <Hero />
@@ -680,6 +738,7 @@ function SiteApp() {
       </main>
       <Footer />
       <BookingModal open={bookingOpen} onClose={closeBooking} />
+      <LanguageSuggestion />
     </>
   );
 }

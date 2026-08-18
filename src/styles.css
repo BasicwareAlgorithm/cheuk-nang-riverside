@@ -37,7 +37,7 @@ section[id] { scroll-margin-top: 90px; }
 
 .page-progress { position: fixed; z-index: 1000; top: 0; left: 0; height: 2px; width: var(--page-progress); background: linear-gradient(90deg, #8c6531, #ead6a3); }
 
-.site-header { align-items: center; color: #fff; display: grid; grid-template-columns: 250px 1fr 190px; height: 88px; left: 0; padding: 0 48px; position: fixed; right: 0; top: 0; transition: background .45s ease, height .45s ease, color .45s ease; z-index: 100; }
+.site-header { align-items: center; color: #fff; display: grid; grid-template-columns: 250px 1fr 260px; height: 88px; left: 0; padding: 0 48px; position: fixed; right: 0; top: 0; transition: background .45s ease, height .45s ease, color .45s ease; z-index: 100; }
 .site-header::after { background: rgba(255,255,255,.3); bottom: 0; content: ""; height: 1px; left: 48px; position: absolute; right: 48px; transition: all .45s ease; }
 .site-header.is-solid { background: rgba(244,240,233,.985); box-shadow: 0 12px 40px rgba(5,25,43,.08); color: var(--ink); height: 72px; }
 .site-header.is-solid::after { background: var(--line); left: 0; right: 0; }
@@ -48,14 +48,28 @@ section[id] { scroll-margin-top: 90px; }
 .brand > span:last-child { display: grid; gap: 5px; }
 .brand strong { font-family: "Songti SC", "STSong", serif; font-size: 17px; font-weight: 400; letter-spacing: .18em; line-height: 1; }
 .brand small { font-family: Georgia, serif; font-size: 7px; letter-spacing: .17em; opacity: .72; }
-.site-header nav { align-items: center; display: flex; gap: clamp(20px,2vw,36px); justify-content: center; }
-.site-header nav a { font-size: 12px; letter-spacing: .14em; opacity: .86; position: relative; }
-.site-header nav a::after { background: currentColor; bottom: -12px; content: ""; height: 1px; left: 0; position: absolute; transform: scaleX(0); transform-origin: right; transition: transform .3s ease; width: 100%; }
-.site-header nav a:hover::after { transform: scaleX(1); transform-origin: left; }
+.site-header > nav { align-items: center; display: flex; gap: clamp(18px,1.7vw,32px); justify-content: center; }
+.site-header > nav a { font-size: 12px; letter-spacing: .14em; opacity: .86; position: relative; }
+.site-header > nav a::after { background: currentColor; bottom: -12px; content: ""; height: 1px; left: 0; position: absolute; transform: scaleX(0); transform-origin: right; transition: transform .3s ease; width: 100%; }
+.site-header > nav a:hover::after { transform: scaleX(1); transform-origin: left; }
+.header-tools { align-items: center; display: flex; gap: 17px; justify-self: end; }
+.language-switcher { align-items: center; display: flex; gap: 0; }
+.language-switcher a { color: inherit; font-size: 11px; letter-spacing: .06em; opacity: .56; padding: 6px 10px; position: relative; }
+.language-switcher a + a::before { background: currentColor; content: ""; height: 10px; left: 0; opacity: .24; position: absolute; top: 50%; transform: translateY(-50%); width: 1px; }
+.language-switcher a.is-active { opacity: 1; }
+.language-switcher a.is-active::after { background: var(--gold-light); bottom: 1px; content: ""; height: 1px; left: 10px; position: absolute; right: 10px; }
+.language-switcher.is-compact a { font-family: Georgia,serif; font-size: 9px; letter-spacing: .08em; padding-inline: 7px; }
+.language-switcher.is-compact a.is-active::after { left: 7px; right: 7px; }
 .header-call { display: grid; gap: 3px; justify-self: end; }
 .header-call span { font-size: 8px; letter-spacing: .22em; opacity: .62; }
 .header-call strong { font-family: Georgia, serif; font-size: 13px; font-weight: 400; letter-spacing: .08em; }
 .menu-toggle, .mobile-menu { display: none; }
+
+.language-suggestion { background: rgba(244,240,233,.98); border: 1px solid rgba(180,139,78,.34); bottom: 28px; box-shadow: 0 18px 55px rgba(4,20,36,.2); color: var(--ink); display: grid; gap: 14px; left: 28px; max-width: 390px; padding: 20px 22px; position: fixed; z-index: 190; }
+.language-suggestion p { font-size: 12px; line-height: 1.8; margin: 0; }
+.language-suggestion div { align-items: center; display: flex; gap: 18px; }
+.language-suggestion a { border-bottom: 1px solid currentColor; color: var(--navy); font-size: 12px; font-weight: 600; padding-bottom: 4px; }
+.language-suggestion button { background: transparent; border: 0; color: var(--muted); cursor: pointer; font-size: 11px; padding: 4px 0; }
 
 .hero { background: var(--navy); color: #fff; height: 100svh; min-height: 760px; overflow: hidden; position: relative; }
 .hero-image { height: calc(100% + 90px); inset: -45px 0 auto; object-fit: cover; object-position: center 48%; position: absolute; transform: translateY(calc(var(--scroll-y) * .12)) scale(1.045); width: 100%; }
@@ -307,9 +321,11 @@ footer { background: #041526; color: #fff; padding: 46px 0; }
 @keyframes booking-rise { from { opacity: 0; transform: translateY(28px) scale(.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
 
 @media (max-width: 1120px) {
-  .site-header { grid-template-columns: 220px 1fr 150px; padding: 0 28px; }
+  .site-header { grid-template-columns: 220px 1fr 220px; padding: 0 28px; }
   .site-header::after { left: 28px; right: 28px; }
-  .site-header nav { gap: 18px; }
+  .site-header > nav { gap: 14px; }
+  .site-header > nav a { font-size: 11px; }
+  .header-tools { gap: 10px; }
   .header-call strong { font-size: 11px; }
   .shell { width: min(100% - 64px,1080px); }
   .project-grid { grid-template-columns: 1fr 1.15fr; }
@@ -320,7 +336,7 @@ footer { background: #041526; color: #fff; padding: 46px 0; }
   .shell { width: calc(100% - 48px); }
   .site-header { grid-template-columns: 1fr auto; height: 72px; padding: 0 24px; }
   .site-header::after { left: 24px; right: 24px; }
-  .site-header nav, .header-call { display: none; }
+  .site-header > nav, .header-tools { display: none; }
   .menu-toggle { align-items: center; background: transparent; border: 0; cursor: pointer; display: flex; justify-content: center; padding: 8px; position: relative; z-index: 103; }
   .mobile-menu { background: var(--paper); color: var(--ink); display: block; inset: 0; opacity: 0; padding: 112px 24px 40px; pointer-events: none; position: fixed; transform: translateY(-20px); transition: .38s ease; z-index: 102; }
   .mobile-menu.is-open { opacity: 1; pointer-events: auto; transform: translateY(0); }
@@ -329,6 +345,10 @@ footer { background: #041526; color: #fff; padding: 46px 0; }
   .mobile-menu .mobile-booking { background: transparent; border-bottom: 1px solid var(--line); cursor: pointer; }
   .mobile-menu a span, .mobile-menu .mobile-booking span { color: var(--gold); font-family: Georgia,serif; font-size: 10px; }
   .mobile-menu a strong, .mobile-menu .mobile-booking strong { font-family: "Songti SC",serif; font-size: 23px; font-weight: 400; letter-spacing: .12em; }
+  .mobile-menu .language-switcher { border-bottom: 1px solid var(--line); display: flex; justify-content: flex-start; padding: 18px 0 4px; }
+  .mobile-menu .language-switcher a { border: 0; display: block; font-family: inherit; font-size: 12px; grid-template-columns: none; letter-spacing: .06em; padding: 12px 18px; width: auto; }
+  .mobile-menu .language-switcher a:first-child { padding-left: 0; }
+  .mobile-menu .language-switcher a.is-active::after { bottom: 7px; left: 0; right: 18px; }
   .hero { min-height: 720px; }
   .hero-copy { left: 7vw; right: 7vw; }
   .hero h1 { font-size: clamp(52px,10vw,82px); }
@@ -441,6 +461,7 @@ footer { background: #041526; color: #fff; padding: 46px 0; }
   .booking-float small { display: none; }
   .booking-float span { font-size: 14px; letter-spacing: .12em; }
   .booking-float svg { grid-row: 1; }
+  .language-suggestion { bottom: calc(max(14px,env(safe-area-inset-bottom)) + 58px); left: max(14px,env(safe-area-inset-left)); max-width: calc(100% - 28px); padding: 16px 18px; right: max(14px,env(safe-area-inset-right)); }
   .booking-overlay { align-items: flex-end; padding: 0; }
   .booking-dialog { border-radius: 18px 18px 0 0; display: block; max-height: calc(100dvh - max(12px,env(safe-area-inset-top))); min-height: 0; overscroll-behavior: contain; width: 100%; }
   .booking-intro { min-height: 190px; padding: 44px 30px 30px; }
