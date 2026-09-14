@@ -13,6 +13,8 @@ test("phase 2 homepage uses reviewed facts and status-qualified claims", async (
   assert.match(app, /港交所股份代号/);
   assert.match(app, /计划2028年开通/);
   assert.match(app, /以政府部门、运营机构及现场实际为准/);
+  assert.match(app, /\["约53%", "90㎡以下户型占比"\]/);
+  assert.match(app, /\["约47%", "90㎡以上户型占比"\]/);
   assert.doesNotMatch(app, /\[\s*["']1973["']\s*,\s*["']港交所上市["']/);
   assert.doesNotMatch(app, /租房不如买房/);
 });
