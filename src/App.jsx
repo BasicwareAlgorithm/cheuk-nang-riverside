@@ -78,6 +78,17 @@ const amenityFacts = [
   { status: "生态实景", title: "滨水公园体系", copy: "项目与石塘公园隔河相望，周边分布半山国家森林公园、虎山公园等生态资源。" },
 ];
 
+const milestones = [
+  { year: "1961", label: "专业起点", copy: "赵世曾博士于英国杜伦大学建筑系毕业。" },
+  { year: "1962", label: "建筑实践", copy: "加入香港特别行政区政府建筑署担任建筑师。" },
+  { year: "1963", label: "企业前身", copy: "公司前身远东羊毛纤维有限公司成立。" },
+  { year: "1972/1973", label: "事业发展", copy: "华光控股成立并上市。" },
+  { year: "1988", label: "卓能启程", copy: "赵世曾博士收购远东并更名为卓能，集团由此开启新的发展阶段。", featured: true },
+  { year: "2004", label: "专业荣誉", copy: "获莫里森大学荣誉哲学博士学位，并获杰出华人奖。" },
+  { year: "2015", label: "战略拓展", copy: "出售卓能广场总部并将资金重新投入中国内地、马来西亚和澳门的发展项目。" },
+  { year: "2016", label: "区域认可", copy: "荣获东盟杰出奖。" },
+];
+
 const unitTypes = [
   {
     code: "A1",
@@ -238,6 +249,30 @@ function Heritage() {
         </div>
       </div>
       <span className="chapter-sign">Cheuk Nang Group</span>
+    </section>
+  );
+}
+
+function Timeline() {
+  return (
+    <section className="timeline paper" id="timeline">
+      <div className="shell timeline-shell">
+        <SectionTitle index="01—08" en="MILESTONES" title={tr("沿时间长河 稳健前行")} intro={tr("从建筑专业起点到跨区域物业发展，时间线梳理卓能重要人物与企业历程。个人经历与公司事件分别标注，避免混为同一口径。")} />
+        <ol className="timeline-list">
+          {milestones.map((item, index) => (
+            <li className={item.featured ? "is-featured" : ""} key={item.year}>
+              <i aria-hidden="true" />
+              <Reveal className="timeline-entry" delay={(index % 3) * 60}>
+                {item.featured && <img src={asset("/assets/brand/cheuk-nang-riverside-mark.png")} alt="" />}
+                <span>{tr(item.label)}</span>
+                <h3>{item.year}</h3>
+                <p>{tr(item.copy)}</p>
+              </Reveal>
+            </li>
+          ))}
+        </ol>
+        <p className="source-note">{tr("时间线依据卓能集团官网公开资料及二期项目材料整理，展示内容用于品牌历程说明。")}</p>
+      </div>
     </section>
   );
 }
@@ -770,6 +805,7 @@ function SiteApp() {
       <main>
         <Hero />
         <Heritage />
+        <Timeline />
         <Project />
         <HangzhouChapter />
         <Location />

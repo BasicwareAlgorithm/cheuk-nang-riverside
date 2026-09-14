@@ -34,9 +34,13 @@ test("phase 2 sections cover community renewal, show homes and home selection", 
   const app = await readFile(path.join(root, "src", "App.jsx"), "utf8");
 
   assert.match(app, /id="community"/);
+  assert.match(app, /id="timeline"/);
   assert.match(app, /id="interiors"/);
   assert.match(app, /id="homes"/);
   assert.match(app, /鎏光逸境 焕新社区/);
   assert.match(app, /从空间尺度 预见生活日常/);
+  assert.match(app, /1961/);
+  assert.match(app, /1972\/1973/);
+  assert.match(app, /2016/);
   assert.match(app, /document\.getElementById\(id\)\?\.scrollIntoView/);
 });
