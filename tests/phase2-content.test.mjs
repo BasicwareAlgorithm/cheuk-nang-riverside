@@ -20,8 +20,12 @@ test("phase 2 homepage uses reviewed facts and status-qualified claims", async (
 test("phase 2 source assets required by the homepage are local", async () => {
   const assets = [
     "hero-aerial.jpg", "arrival-gate.jpg", "clubhouse-lawn.jpg", "playground.jpg",
-    "garden-club.jpg", "location-map.jpg", "small-living.jpg", "small-bedroom.jpg",
-    "large-living.jpg", "large-bedroom.jpg", "unit-a1.jpg", "unit-a2.jpg",
+    "sparse-grove.jpg", "location-map.jpg", "group-works-hk.jpg", "group-works-regional.jpg",
+    "landscape-masterplan.jpg", "commercial-street.jpg", "north-entrance.jpg", "east-entrance.jpg",
+    "liuguang-courtyard.jpg", "art-screen.jpg", "liuguang-island.jpg", "sales-centre-plan.jpg",
+    "sales-lobby.jpg", "sales-waterbar.jpg", "sales-corridor.jpg", "sales-signing-room.jpg",
+    "sales-restroom.jpg", "small-living.jpg", "small-bedroom.jpg", "large-entry.jpg",
+    "large-living.jpg", "large-main-bedroom.jpg", "large-shower.jpg", "large-bedroom.jpg", "unit-a1.jpg", "unit-a2.jpg",
     "unit-d5.jpg", "unit-f2.jpg",
   ];
 
@@ -35,6 +39,10 @@ test("phase 2 sections cover community renewal, show homes and home selection", 
 
   assert.match(app, /id="community"/);
   assert.match(app, /id="timeline"/);
+  assert.match(app, /function GroupFootprint/);
+  assert.match(app, /function ProjectArchive/);
+  assert.match(app, /function RenewalGallery/);
+  assert.match(app, /function SalesCentre/);
   assert.match(app, /id="interiors"/);
   assert.match(app, /id="homes"/);
   assert.match(app, /鎏光逸境 焕新社区/);
@@ -43,4 +51,13 @@ test("phase 2 sections cover community renewal, show homes and home selection", 
   assert.match(app, /1972\/1973/);
   assert.match(app, /2016/);
   assert.match(app, /document\.getElementById\(id\)\?\.scrollIntoView/);
+});
+
+test("homepage exposes a share title, description and phase 2 cover image", async () => {
+  const html = await readFile(path.join(root, "index.html"), "utf8");
+
+  assert.match(html, /property="og:title"/);
+  assert.match(html, /property="og:description"/);
+  assert.match(html, /property="og:image" content="https:\/\/www\.cheuknangriverside\.com\/assets\/phase2\/hero-aerial\.jpg"/);
+  assert.match(html, /name="twitter:card" content="summary_large_image"/);
 });

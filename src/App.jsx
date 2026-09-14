@@ -63,10 +63,10 @@ const communityScenes = [
   },
   {
     no: "04",
-    title: "静岸林宴",
+    title: "疏林悦憩",
     en: "GARDEN",
-    copy: "滨水绿意、花境与邻里停留空间共同构成安静而有层次的社区花园。",
-    image: "garden-club.jpg",
+    copy: "疏林、花境与邻里停留空间共同构成安静而有层次的社区花园。",
+    image: "sparse-grove.jpg",
   },
 ];
 
@@ -87,6 +87,98 @@ const milestones = [
   { year: "2004", label: "专业荣誉", copy: "获莫里森大学荣誉哲学博士学位，并获杰出华人奖。" },
   { year: "2015", label: "战略拓展", copy: "出售卓能广场总部并将资金重新投入中国内地、马来西亚和澳门的发展项目。" },
   { year: "2016", label: "区域认可", copy: "荣获东盟杰出奖。" },
+];
+
+const groupFootprints = [
+  {
+    region: "中国香港",
+    image: "group-works-hk.jpg",
+    projects: ["卓能广场", "卓能山庄", "卓能中心", "赵苑", "一号九龙山顶", "新赵苑"],
+  },
+  {
+    region: "中国内地与澳门",
+    image: "group-works-regional.jpg",
+    projects: ["深圳卓能雅苑", "澳门住宅及酒店式公寓项目"],
+  },
+];
+
+const groupBusiness = [
+  ["物业销售", "开发高端住宅、别墅、商业综合体与写字楼。"],
+  ["物业租赁", "持有香港及海外商业、写字楼与公寓物业。"],
+  ["物业管理", "为住宅、商业与会所提供配套运营服务。"],
+  ["金融投资", "配置港股、债券及海外证券资产。"],
+];
+
+const projectMetrics = [
+  ["12.3万㎡", "项目总建筑面积"],
+  ["约9万㎡", "地上建筑面积"],
+  ["约3.3万㎡", "地下建筑面积"],
+  ["约8.96万㎡", "计容建筑面积"],
+  ["约8.1万㎡", "高层公寓可售面积"],
+  ["约4750㎡", "排屋面积"],
+  ["约1600㎡", "商铺面积"],
+  ["840套", "规划住宅"],
+  ["779个", "规划车位"],
+  ["约580个", "可售车位"],
+  ["约53:47", "90㎡以下与以上户型配比"],
+];
+
+const contextPanels = [
+  {
+    no: "01",
+    label: "城市规划",
+    title: "大城北与崇贤新城",
+    copy: "资料将崇贤新城归入杭州大城北重点建设范围，并列示2024—2026年三年行动计划。规划内容应以政府部门最新公示为准。",
+  },
+  {
+    no: "02",
+    label: "公共交通",
+    title: "公交与轨道接驳",
+    copy: "材料列示329、B7、490/490A、379、397、547M、347及8220等线路；实际站点与班次以公交运营信息为准。",
+  },
+  {
+    no: "03",
+    label: "远期轨道",
+    title: "地铁14号线规划",
+    copy: "规划中的14号线有望服务崇贤新城，相关线路、站点和建设时序仍处于规划阶段。",
+  },
+  {
+    no: "04",
+    label: "产业发展",
+    title: "陆家桥数智产业园",
+    copy: "项目材料将其定位为高端医疗器械智造基地；建设进度、企业入驻及岗位数据以园区和政府最新信息为准。",
+  },
+];
+
+const renewalGallery = [
+  ["landscape-masterplan.jpg", "景观功能总平面", "规划图"],
+  ["commercial-street.jpg", "商业街", "改造效果图"],
+  ["north-entrance.jpg", "北入口", "改造效果图"],
+  ["east-entrance.jpg", "东入口", "改造效果图"],
+  ["liuguang-courtyard.jpg", "鎏光庭院", "改造效果图"],
+  ["playground.jpg", "绿野乐园", "改造效果图"],
+  ["art-screen.jpg", "艺术屏风", "改造效果图"],
+  ["liuguang-island.jpg", "流光翠岛", "改造效果图"],
+  ["sparse-grove.jpg", "疏林悦憩", "改造效果图"],
+];
+
+const salesJourney = [
+  ["sales-centre-plan.jpg", "空间总览", "平面布局"],
+  ["sales-lobby.jpg", "抵达", "前厅效果图"],
+  ["sales-waterbar.jpg", "停留", "水吧区效果图"],
+  ["sales-corridor.jpg", "过渡", "过道区效果图"],
+  ["sales-signing-room.jpg", "洽谈", "签约室效果图"],
+  ["sales-restroom.jpg", "细节", "卫生间效果图"],
+];
+
+const showroomScenes = [
+  ["small-living.jpg", "约67㎡ 苏式原木风", "客餐厅效果图"],
+  ["small-bedroom.jpg", "约67㎡ 苏式原木风", "主卧效果图"],
+  ["large-entry.jpg", "约138㎡ 美式风格", "入户玄关效果图"],
+  ["large-living.jpg", "约138㎡ 美式风格", "客餐厅效果图"],
+  ["large-main-bedroom.jpg", "约138㎡ 美式风格", "主卧效果图"],
+  ["large-shower.jpg", "约138㎡ 美式风格", "淋浴间效果图"],
+  ["large-bedroom.jpg", "约138㎡ 美式风格", "客卧效果图"],
 ];
 
 const unitTypes = [
@@ -277,6 +369,33 @@ function Timeline() {
   );
 }
 
+function GroupFootprint() {
+  return (
+    <section className="group-footprint paper" id="group-footprint">
+      <div className="shell">
+        <SectionTitle index="01B" en="SELECTED PROJECTS" title={tr("从香港出发 布局多元市场")} intro={tr("代表项目按照二期案场说辞与楼书整理，作为集团开发经验的简要索引。")} />
+        <div className="business-grid">
+          {groupBusiness.map(([title, copy], index) => (
+            <Reveal delay={index * 50} key={title}><span>0{index + 1}</span><h3>{tr(title)}</h3><p>{tr(copy)}</p></Reveal>
+          ))}
+        </div>
+        <div className="footprint-grid">
+          {groupFootprints.map((group, index) => (
+            <Reveal className="footprint-card" delay={index * 90} key={group.region}>
+              <img src={asset(`${PHASE2}/${group.image}`)} alt={tr(`${group.region}代表项目`)} loading="lazy" />
+              <div>
+                <span>{String(index + 1).padStart(2, "0")} · {tr(group.region)}</span>
+                <ul>{group.projects.map((project) => <li key={project}>{tr(project)}</li>)}</ul>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+        <p className="source-note">{tr("项目名称与区域来自二期项目资料，具体物业状态及最新用途以卓能集团公开信息为准。")}</p>
+      </div>
+    </section>
+  );
+}
+
 function Project() {
   return (
     <section className="project paper" id="project">
@@ -297,6 +416,25 @@ function Project() {
           <figure className="project-inset"><img src={asset(`${PHASE2}/arrival-gate.jpg`)} alt={tr("卓能河畔轩入口改造效果图")} /><figcaption>{tr("入口改造效果图")}</figcaption></figure>
           <span className="project-ring" aria-hidden="true" />
         </Reveal>
+      </div>
+    </section>
+  );
+}
+
+function ProjectArchive() {
+  return (
+    <section className="project-archive" id="project-record">
+      <div className="shell">
+        <div className="archive-heading">
+          <p>PROJECT RECORD · JUNE 2026</p>
+          <h2>{tr("项目数据档案")}</h2>
+          <span>{tr("下列数据依据2026年6月项目介绍整理，最终以最新批准文件和销售资料为准。")}</span>
+        </div>
+        <dl className="archive-grid">
+          {projectMetrics.map(([value, label], index) => (
+            <Reveal delay={(index % 4) * 45} key={label}><dt>{tr(value)}</dt><dd>{tr(label)}</dd></Reveal>
+          ))}
+        </dl>
       </div>
     </section>
   );
@@ -338,6 +476,23 @@ function Location() {
   );
 }
 
+function ContextDetails() {
+  return (
+    <section className="context-details paper" id="city-context">
+      <div className="shell">
+        <SectionTitle index="03B" en="CITY CONTEXT" title={tr("把通勤与发展 放进同一张生活地图")} intro={tr("补充公交、远期轨道、城市规划与产业信息；所有未来事项均保持规划或待核实状态。")} />
+        <div className="context-grid">
+          {contextPanels.map((item, index) => (
+            <Reveal className="context-panel" delay={index * 55} key={item.no}>
+              <span>{item.no} · {tr(item.label)}</span><h3>{tr(item.title)}</h3><p>{tr(item.copy)}</p>
+            </Reveal>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function Community({ active, setActive }) {
   const scene = communityScenes[active];
   return (
@@ -359,19 +514,50 @@ function Community({ active, setActive }) {
   );
 }
 
+function RenewalGallery() {
+  return (
+    <section className="renewal-gallery paper" id="renewal-gallery">
+      <div className="shell">
+        <SectionTitle index="04B" en="LANDSCAPE MASTERPLAN" title={tr("从一张总图 走入九重场景")} intro={tr("将商业街、社区入口、庭院、儿童活动与林下休憩串联为完整的景观焕新路径。")} />
+      </div>
+      <div className="gallery-rail" aria-label={tr("社区景观改造画廊")}>
+        {renewalGallery.map(([image, title, status], index) => (
+          <figure className={index === 0 ? "is-plan" : ""} key={image}>
+            <img src={asset(`${PHASE2}/${image}`)} alt={`${tr(title)} ${tr(status)}`} loading="lazy" />
+            <figcaption><span>{String(index + 1).padStart(2, "0")} · {tr(status)}</span><strong>{tr(title)}</strong></figcaption>
+          </figure>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function SalesCentre() {
+  return (
+    <section className="sales-centre" id="sales-centre">
+      <div className="shell">
+        <SectionTitle index="04C" en="SALES CENTRE" title={tr("从抵达 到从容洽谈")} intro={tr("以空间总览、前厅、水吧、过道、签约室与卫生间组成完整的案场体验路径。")} light />
+      </div>
+      <div className="sales-journey">
+        {salesJourney.map(([image, title, caption], index) => (
+          <figure key={image}>
+            <img src={asset(`${PHASE2}/${image}`)} alt={tr(caption)} loading="lazy" />
+            <figcaption><span>{String(index + 1).padStart(2, "0")} · {tr(title)}</span><strong>{tr(caption)}</strong></figcaption>
+          </figure>
+        ))}
+      </div>
+      <p className="shell sales-note">{tr("本章节均为售楼处改造效果图，实际空间以最终实施及现场呈现为准。")}</p>
+    </section>
+  );
+}
+
 function Interiors() {
-  const rooms = [
-    ["small-living.jpg", "约67㎡ 苏式原木风", "客餐厅效果图"],
-    ["small-bedroom.jpg", "约67㎡ 苏式原木风", "主卧效果图"],
-    ["large-living.jpg", "约138㎡ 美式风格", "客餐厅效果图"],
-    ["large-bedroom.jpg", "约138㎡ 美式风格", "客卧效果图"],
-  ];
   return (
     <section className="interiors paper" id="interiors">
       <div className="shell">
         <SectionTitle index="05" en="INTERIOR COLLECTION" title={tr("从空间尺度 预见生活日常")} intro={tr("以约67㎡和约138㎡两类样板间方案，呈现不同家庭结构下的收纳、会客与休憩场景。")} />
         <div className="interior-grid">
-          {rooms.map(([image, title, caption], index) => (
+          {showroomScenes.map(([image, title, caption], index) => (
             <Reveal className={`interior-card interior-card-${index + 1}`} delay={index * 70} key={image}>
               <img src={asset(`${PHASE2}/${image}`)} alt={`${tr(title)} ${tr(caption)}`} loading="lazy" />
               <div><span>{tr("室内效果图")}</span><h3>{tr(title)}</h3><p>{tr(caption)}</p></div>
@@ -806,10 +992,15 @@ function SiteApp() {
         <Hero />
         <Heritage />
         <Timeline />
+        <GroupFootprint />
         <Project />
+        <ProjectArchive />
         <HangzhouChapter />
         <Location />
+        <ContextDetails />
         <Community active={scene} setActive={setScene} />
+        <RenewalGallery />
+        <SalesCentre />
         <Interiors />
         <Film />
         <Homes active={unit} setActive={setUnit} />

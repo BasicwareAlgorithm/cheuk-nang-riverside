@@ -125,6 +125,20 @@ section[id] { scroll-margin-top: 90px; }
 .timeline-list li.is-featured .timeline-entry p { color: rgba(255,255,255,.76); }
 .timeline-entry img { height: 54px; object-fit: contain; position: absolute; right: 28px; top: 28px; width: 54px; }
 
+.group-footprint { padding: 145px 0 165px; }
+.business-grid { border-left: 1px solid var(--line); border-top: 1px solid var(--line); display: grid; grid-template-columns: repeat(4,1fr); margin-top: 65px; }
+.business-grid > div { border-bottom: 1px solid var(--line); border-right: 1px solid var(--line); min-height: 215px; padding: 28px; }
+.business-grid span { color: var(--gold); font-family: Georgia,serif; font-size: 11px; }
+.business-grid h3 { font-family: "Songti SC",serif; font-size: 24px; font-weight: 400; letter-spacing: .08em; margin: 34px 0 18px; }
+.business-grid p { color: var(--muted); font-size: 13px; line-height: 1.8; margin: 0; }
+.footprint-grid { display: grid; gap: 24px; grid-template-columns: 1fr 1fr; margin-top: 68px; }
+.footprint-card { background: var(--navy); min-height: 560px; overflow: hidden; position: relative; }
+.footprint-card > img { height: 62%; object-fit: cover; object-position: center; width: 100%; }
+.footprint-card > div { color: #fff; padding: 30px 34px 34px; }
+.footprint-card > div > span { color: var(--gold-light); font-size: 11px; letter-spacing: .2em; }
+.footprint-card ul { display: flex; flex-wrap: wrap; gap: 10px 22px; margin-top: 22px; }
+.footprint-card li { border-bottom: 1px solid rgba(255,255,255,.22); font-family: "Songti SC",serif; font-size: 17px; letter-spacing: .06em; padding-bottom: 7px; }
+
 .project { overflow: hidden; padding: 155px 0 170px; }
 .project-grid { align-items: center; display: grid; gap: clamp(70px,9vw,140px); grid-template-columns: .86fr 1.14fr; }
 .project-copy .section-title h2 { font-size: clamp(40px,4vw,62px); line-height: 1.22; }
@@ -150,6 +164,16 @@ section[id] { scroll-margin-top: 90px; }
 .project-inset img { height: 100%; object-fit: cover; width: 100%; }
 .project-inset figcaption { background: rgba(4,20,36,.78); bottom: 0; color: #fff; font-size: 11px; left: 0; letter-spacing: .12em; padding: 9px 13px; position: absolute; }
 .project-ring { border: 1px solid rgba(180,139,78,.5); border-radius: 50%; bottom: 2%; height: 280px; left: 26%; position: absolute; width: 280px; }
+
+.project-archive { background: var(--navy); color: #fff; padding: 120px 0 130px; }
+.archive-heading { display: grid; gap: 18px; grid-template-columns: .55fr 1fr; margin-bottom: 60px; }
+.archive-heading p { color: var(--gold-light); font-family: Georgia,serif; font-size: 10px; letter-spacing: .25em; }
+.archive-heading h2 { font-family: "Songti SC",serif; font-size: clamp(38px,4vw,60px); font-weight: 400; grid-column: 1; letter-spacing: .1em; margin: 0; }
+.archive-heading span { align-self: end; color: rgba(255,255,255,.62); font-size: 13px; grid-column: 2; grid-row: 1/3; line-height: 2; max-width: 520px; }
+.archive-grid { border-left: 1px solid var(--white-line); border-top: 1px solid var(--white-line); display: grid; grid-template-columns: repeat(4,1fr); }
+.archive-grid > div { border-bottom: 1px solid var(--white-line); border-right: 1px solid var(--white-line); min-height: 142px; padding: 28px; }
+.archive-grid dt { color: var(--gold-light); font-family: Georgia,"Songti SC",serif; font-size: 28px; }
+.archive-grid dd { font-size: 12px; letter-spacing: .08em; margin-top: 14px; opacity: .72; }
 
 .chapter-hangzhou { color: #fff; height: 100svh; min-height: 760px; overflow: hidden; position: relative; }
 .chapter-hangzhou > img { height: 100%; object-fit: cover; position: absolute; width: 100%; }
@@ -178,6 +202,13 @@ section[id] { scroll-margin-top: 90px; }
 .phase2-location-grid .location-fact { min-height: 126px; }
 .source-note { border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; letter-spacing: .04em; line-height: 1.8; margin: 34px 0 0; padding-top: 18px; }
 
+.context-details { padding: 0 0 150px; }
+.context-grid { border-left: 1px solid var(--line); border-top: 1px solid var(--line); display: grid; grid-template-columns: repeat(4,1fr); margin-top: 65px; }
+.context-panel { border-bottom: 1px solid var(--line); border-right: 1px solid var(--line); min-height: 310px; padding: 35px 30px; }
+.context-panel > span { color: var(--gold); font-family: Georgia,"PingFang SC",sans-serif; font-size: 11px; letter-spacing: .16em; }
+.context-panel h3 { font-family: "Songti SC",serif; font-size: 25px; font-weight: 400; letter-spacing: .08em; line-height: 1.45; margin: 48px 0 22px; }
+.context-panel p { color: var(--muted); font-size: 13px; line-height: 1.9; margin: 0; }
+
 .lifestyle { background: var(--navy); color: #fff; height: 100svh; min-height: 780px; overflow: hidden; position: relative; }
 .lifestyle-bg { animation: scene-in 1.2s cubic-bezier(.2,.75,.2,1) both; height: 100%; inset: 0; object-fit: cover; position: absolute; width: 100%; }
 .lifestyle-shade { background: linear-gradient(90deg,rgba(3,17,30,.78),rgba(3,17,30,.27) 55%,rgba(3,17,30,.15)); inset: 0; position: absolute; }
@@ -199,11 +230,31 @@ section[id] { scroll-margin-top: 90px; }
 .scene-tabs button.is-active strong { opacity: 1; }
 .scene-tabs button.is-active i { transform: scaleX(1); }
 
+.renewal-gallery { overflow: hidden; padding: 145px 0 160px; }
+.gallery-rail, .sales-journey { display: flex; gap: 22px; margin-top: 68px; overflow-x: auto; padding: 0 max(52px,calc((100vw - 1260px)/2)) 28px; scroll-snap-type: x mandatory; scrollbar-color: var(--gold) transparent; }
+.gallery-rail figure, .sales-journey figure { flex: 0 0 min(66vw,850px); height: 520px; margin: 0; overflow: hidden; position: relative; scroll-snap-align: center; }
+.gallery-rail figure.is-plan { background: #eee7dc; }
+.gallery-rail img, .sales-journey img { height: 100%; object-fit: cover; transition: transform .8s ease; width: 100%; }
+.gallery-rail figure.is-plan img { object-fit: contain; }
+.gallery-rail figure:hover img, .sales-journey figure:hover img { transform: scale(1.025); }
+.gallery-rail figure::after, .sales-journey figure::after { background: linear-gradient(0deg,rgba(3,17,30,.78),transparent 48%); content: ""; inset: 0; position: absolute; }
+.gallery-rail figcaption, .sales-journey figcaption { bottom: 0; color: #fff; display: grid; gap: 9px; left: 0; padding: 30px; position: absolute; z-index: 2; }
+.gallery-rail figcaption span, .sales-journey figcaption span { color: var(--gold-light); font-size: 11px; letter-spacing: .17em; }
+.gallery-rail figcaption strong, .sales-journey figcaption strong { font-family: "Songti SC",serif; font-size: 30px; font-weight: 400; letter-spacing: .08em; }
+
+.sales-centre { background: #061a2e; color: #fff; overflow: hidden; padding: 145px 0 120px; }
+.sales-journey { margin-top: 68px; }
+.sales-journey figure { flex-basis: min(56vw,760px); height: 500px; }
+.sales-journey figure:first-child { background: #f2eee6; }
+.sales-journey figure:first-child img { object-fit: contain; }
+.sales-note { border-top: 1px solid var(--white-line); color: rgba(255,255,255,.62); font-size: 12px; line-height: 1.8; margin-top: 22px; padding-top: 20px; }
+
 .interiors { overflow: hidden; padding: 150px 0 170px; }
 .interior-grid { display: grid; gap: 22px; grid-template-columns: repeat(12,1fr); margin-top: 70px; }
 .interior-card { min-height: 390px; overflow: hidden; position: relative; }
-.interior-card-1, .interior-card-4 { grid-column: span 7; }
-.interior-card-2, .interior-card-3 { grid-column: span 5; }
+.interior-card-1, .interior-card-4, .interior-card-5 { grid-column: span 7; }
+.interior-card-2, .interior-card-3, .interior-card-6 { grid-column: span 5; }
+.interior-card-7 { grid-column: span 12; }
 .interior-card img { height: 100%; object-fit: cover; position: absolute; transition: transform 1s cubic-bezier(.2,.8,.2,1); width: 100%; }
 .interior-card:hover img { transform: scale(1.025); }
 .interior-card::after { background: linear-gradient(0deg,rgba(3,17,30,.78),transparent 55%); content: ""; inset: 0; position: absolute; }
@@ -400,18 +451,26 @@ footer { background: #041526; color: #fff; padding: 46px 0; }
   .heritage-inner { gap: 70px; grid-template-columns: 1fr; padding: 120px 0; }
   .heritage-stats { max-width: 620px; }
   .timeline { padding: 120px 0; }
+  .group-footprint { padding: 120px 0; }
+  .business-grid { grid-template-columns: 1fr 1fr; }
+  .footprint-grid { grid-template-columns: 1fr; }
+  .footprint-card { min-height: 520px; }
   .project { padding: 120px 0; }
   .project-grid { gap: 80px; grid-template-columns: 1fr; }
   .project-visual { min-height: 620px; }
+  .archive-grid { grid-template-columns: repeat(2,1fr); }
   .location { padding: 120px 0; }
   .location-grid { grid-template-columns: 1fr; }
   .phase2-location-grid .map-frame { position: relative; top: auto; }
   .map-frame { min-height: 560px; }
+  .context-grid { grid-template-columns: 1fr 1fr; }
+  .context-panel { min-height: 260px; }
   .lifestyle { height: auto; min-height: 1080px; }
   .lifestyle-head { left: 24px; top: 90px; }
   .lifestyle-content { bottom: 480px; left: 24px; right: 24px; }
   .scene-tabs { grid-template-columns: 1fr 1fr; }
   .scene-tabs button { min-height: 130px; }
+  .gallery-rail figure, .sales-journey figure { flex-basis: 78vw; }
   .interiors { padding: 120px 0; }
   .interior-card { grid-column: span 6; min-height: 360px; }
   .film { padding: 110px 0 130px; }
@@ -467,6 +526,15 @@ footer { background: #041526; color: #fff; padding: 46px 0; }
   .timeline-entry h3 { font-size: 30px; }
   .timeline-entry p { font-size: 13px; }
   .timeline-entry img { height: 42px; right: 20px; top: 20px; width: 42px; }
+  .group-footprint { padding: 100px 0; }
+  .business-grid { grid-template-columns: 1fr; margin-top: 46px; }
+  .business-grid > div { min-height: 0; padding: 24px; }
+  .business-grid h3 { margin: 25px 0 14px; }
+  .footprint-grid { gap: 16px; margin-top: 48px; }
+  .footprint-card { min-height: 440px; }
+  .footprint-card > img { height: 54%; }
+  .footprint-card > div { padding: 24px; }
+  .footprint-card li { font-size: 15px; }
   .chapter-sign { display: none; }
   .project { padding: 100px 0; }
   .project-copy .section-title h2 { font-size: clamp(31px,9.6vw,39px); letter-spacing: .06em; line-height: 1.35; }
@@ -479,6 +547,14 @@ footer { background: #041526; color: #fff; padding: 46px 0; }
   .project-main { height: 430px; width: 88%; }
   .project-inset { height: 180px; width: 48%; }
   .project-ring { height: 190px; width: 190px; }
+  .project-archive { padding: 90px 0 100px; }
+  .archive-heading { display: block; margin-bottom: 42px; }
+  .archive-heading h2 { font-size: 36px; margin: 15px 0 20px; }
+  .archive-heading span { display: block; }
+  .archive-grid { grid-template-columns: 1fr 1fr; }
+  .archive-grid > div { min-height: 126px; padding: 22px 18px; }
+  .archive-grid dt { font-size: 23px; }
+  .archive-grid dd { font-size: 11px; line-height: 1.6; }
   .chapter-hangzhou { min-height: 680px; }
   .chapter-copy h2 { font-size: clamp(35px,10.6vw,45px); letter-spacing: .035em; line-height: 1.3; padding-bottom: .08em; word-break: keep-all; }
   .chapter-copy strong { font-size: 13px; }
@@ -486,12 +562,23 @@ footer { background: #041526; color: #fff; padding: 46px 0; }
   .location-grid { margin-top: 52px; }
   .map-frame { min-height: 390px; }
   .location-fact { padding: 27px 0; }
+  .context-details { padding-bottom: 100px; }
+  .context-grid { grid-template-columns: 1fr; margin-top: 45px; }
+  .context-panel { min-height: 0; padding: 28px 24px; }
+  .context-panel h3 { margin: 30px 0 16px; }
   .lifestyle { min-height: 1050px; }
   .lifestyle-head { top: 75px; }
   .lifestyle-head h2 { font-size: clamp(29px,8.6vw,34px); line-height: 1.35; text-wrap: balance; word-break: keep-all; }
   .lifestyle-content { bottom: 450px; }
   .lifestyle-content h3 { font-size: 45px; }
   .scene-tabs button { min-height: 140px; padding: 24px; }
+  .renewal-gallery { padding: 100px 0; }
+  .gallery-rail, .sales-journey { gap: 14px; margin-top: 48px; padding-left: 20px; padding-right: 20px; }
+  .gallery-rail figure, .sales-journey figure { flex-basis: 86vw; height: 360px; }
+  .gallery-rail figcaption, .sales-journey figcaption { padding: 22px; }
+  .gallery-rail figcaption strong, .sales-journey figcaption strong { font-size: 24px; }
+  .sales-centre { padding: 100px 0 85px; }
+  .sales-journey figure { height: 390px; }
   .interiors { padding: 100px 0; }
   .interior-grid { gap: 14px; grid-template-columns: 1fr; margin-top: 50px; }
   .interior-card { grid-column: auto; min-height: 340px; }
