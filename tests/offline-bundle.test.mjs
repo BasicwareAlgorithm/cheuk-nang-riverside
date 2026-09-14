@@ -9,22 +9,26 @@ const projectRoot = path.resolve(testDir, "..");
 const offlineHtmlPath = path.join(projectRoot, "卓能河畔轩-离线版.html");
 
 const expectedRuntimeAssets = [
+  "/assets/brand/cheuk-nang-riverside-mark.png",
   "/assets/ppt/project-film.mp4",
-  "/assets/ppt/chapter-world.jpg",
-  "/assets/ppt/community-aerial.jpg",
-  "/assets/ppt/facade.jpg",
-  "/assets/ppt/chapter-hangzhou.jpg",
-  "/assets/ppt/location-map.jpg",
-  "/assets/ppt/river-view.jpeg",
-  "/assets/ppt/river-walk.jpeg",
-  "/assets/ppt/city-view.png",
-  "/assets/ppt/interior.jpeg",
+  "/assets/ppt/group-estate.jpeg",
+  "/assets/ppt/hangzhou-city-clean.jpg",
   "/assets/ppt/interior-panorama.jpg",
-  "/assets/ppt/unit-a1.jpg",
-  "/assets/ppt/unit-a2.jpg",
-  "/assets/ppt/unit-d5.jpg",
-  "/assets/ppt/unit-f2.jpg",
-  "/assets/ppt/contact.jpg",
+  "/assets/ppt/contact-clean.jpg",
+  "/assets/phase2/hero-aerial.jpg",
+  "/assets/phase2/arrival-gate.jpg",
+  "/assets/phase2/location-map.jpg",
+  "/assets/phase2/playground.jpg",
+  "/assets/phase2/clubhouse-lawn.jpg",
+  "/assets/phase2/garden-club.jpg",
+  "/assets/phase2/small-living.jpg",
+  "/assets/phase2/small-bedroom.jpg",
+  "/assets/phase2/large-living.jpg",
+  "/assets/phase2/large-bedroom.jpg",
+  "/assets/phase2/unit-a1.jpg",
+  "/assets/phase2/unit-a2.jpg",
+  "/assets/phase2/unit-d5.jpg",
+  "/assets/phase2/unit-f2.jpg",
 ];
 
 test("offline HTML embeds its runtime, styles, and image assets", async () => {
@@ -45,7 +49,8 @@ test("offline HTML embeds its runtime, styles, and image assets", async () => {
 
   for (const assetPath of expectedRuntimeAssets) {
     assert.match(assets[assetPath], /^data:(?:image\/(?:jpeg|png|webp)|video\/mp4);base64,/);
-    assert.ok(Buffer.from(assets[assetPath].split(",", 2)[1], "base64").length > 10_000);
+    const minimumBytes = assetPath.includes("/assets/brand/") ? 1_000 : 10_000;
+    assert.ok(Buffer.from(assets[assetPath].split(",", 2)[1], "base64").length > minimumBytes);
   }
 
   assert.match(html, /卓能河畔轩/);

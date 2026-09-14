@@ -17,6 +17,7 @@ import {
 } from "./locales.js";
 
 const MATERIAL = "/assets/ppt";
+const PHASE2 = "/assets/phase2";
 const PROJECT_FILM_URL = `https://media.cheuknangriverside.com${MATERIAL}/project-film.mp4`;
 const DEPLOY_BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 const RESERVATION_ENDPOINT = "/api/reservations";
@@ -29,44 +30,52 @@ function asset(path) {
 
 const navLinks = [
   ["品牌", "#heritage"],
-  ["项目", "#project"],
   ["区位", "#location"],
-  ["生活", "#lifestyle"],
+  ["项目", "#project"],
+  ["社区", "#community"],
   ["影像", "#film"],
   ["户型", "#homes"],
   ["资讯", "/insights/"],
   ["联系", "#contact"],
 ];
 
-const lifestyleScenes = [
+const communityScenes = [
   {
     no: "01",
-    title: "山水环抱",
-    en: "LANDSCAPE",
-    copy: "葱郁山景与清澈河道温柔相拥，城市繁华与自然静谧在此交融。",
-    image: "river-view.jpeg",
+    title: "鎏光归家",
+    en: "ARRIVAL",
+    copy: "以更清晰的归家秩序重塑社区入口，让建筑、林荫与礼序在第一眼自然衔接。",
+    image: "arrival-gate.jpg",
   },
   {
     no: "02",
-    title: "临水而居",
-    en: "RIVERSIDE",
-    copy: "与石塘公园隔河相望，坐享滨河绿道景观，让生活回到水岸的从容尺度。",
-    image: "river-walk.jpeg",
+    title: "绿野乐园",
+    en: "PLAYGROUND",
+    copy: "儿童活动、环形场地与林下看护空间相互连接，形成可参与的全龄社区日常。",
+    image: "playground.jpg",
   },
   {
     no: "03",
-    title: "俯瞰一城",
-    en: "PANORAMA",
-    copy: "板块制高点，俯瞰山水公园与江南流水，云端栖居，繁华静谧尽揽怀中。",
-    image: "city-view.png",
+    title: "森氧俱乐部",
+    en: "CLUBHOUSE",
+    copy: "把休闲、会客与轻运动置入绿荫之间，为社区补充更松弛的共享生活场景。",
+    image: "clubhouse-lawn.jpg",
   },
   {
     no: "04",
-    title: "温馨满屋",
-    en: "INTERIOR",
-    copy: "港式怀旧风小户型，温馨居家设计，方寸之间尽享烟火温情与精致生活。",
-    image: "interior.jpeg",
+    title: "静岸林宴",
+    en: "GARDEN",
+    copy: "滨水绿意、花境与邻里停留空间共同构成安静而有层次的社区花园。",
+    image: "garden-club.jpg",
   },
+];
+
+const amenityFacts = [
+  { status: "在建", title: "地铁15号线崇贤站", copy: "资料显示A出入口距项目西门约200米、距主入口约350米，计划2028年开通。" },
+  { status: "已运营", title: "全龄教育资源", copy: "项目约2公里范围内覆盖幼儿园、小学与中学；具体招生范围以教育主管部门最新政策为准。" },
+  { status: "已运营／待核实", title: "商业生活圈", copy: "上亿广场及招商城北花园城等商业资源位于项目约1.5公里生活半径内，运营状态以实地为准。" },
+  { status: "在建／规划", title: "医疗健康配套", copy: "区域资料列示邵逸夫医院分院、临平区中医院崇贤分院等医疗资源，交付与运营时间以官方信息为准。" },
+  { status: "生态实景", title: "滨水公园体系", copy: "项目与石塘公园隔河相望，周边分布半山国家森林公园、虎山公园等生态资源。" },
 ];
 
 const unitTypes = [
@@ -75,7 +84,8 @@ const unitTypes = [
     name: "拾光",
     area: "65",
     room: "一室两厅一卫",
-    image: "unit-a1-logo.jpg",
+    image: "unit-a1.jpg",
+    audience: "初次置业与一人居",
     features: ["通透格局", "客餐一体", "独立角厨", "飘窗主卧"],
   },
   {
@@ -83,7 +93,8 @@ const unitTypes = [
     name: "拾屿",
     area: "67",
     room: "两室两厅一卫",
-    image: "unit-a2-logo.jpg",
+    image: "unit-a2.jpg",
+    audience: "两口之家与成长型一居",
     features: ["全明空间", "科学布局", "阔绰通厅", "南向主卧"],
   },
   {
@@ -91,7 +102,8 @@ const unitTypes = [
     name: "澜岸",
     area: "88",
     room: "三室两厅一卫",
-    image: "unit-d5-logo.jpg",
+    image: "unit-d5.jpg",
+    audience: "小家庭与弹性三房需求",
     features: ["规整格局", "一体通厅", "飘景主卧", "独立明厨"],
   },
   {
@@ -99,7 +111,8 @@ const unitTypes = [
     name: "澜轩",
     area: "138",
     room: "三室两厅两卫",
-    image: "unit-f2-logo.jpg",
+    image: "unit-f2.jpg",
+    audience: "改善家庭与多代同住",
     features: ["独立玄关", "全能三房", "观景阔厅", "南北双阳台"],
   },
 ];
@@ -127,7 +140,7 @@ function Brand({ light = false }) {
   return (
     <a className={`brand ${light ? "is-light" : ""}`} href={localizedHref("/#top")} aria-label={tr("卓能河畔轩首页")}>
       <span className="brand-mark" aria-hidden="true">
-        <img src="/assets/brand/cheuk-nang-riverside-mark.png" alt="" />
+        <img src={asset("/assets/brand/cheuk-nang-riverside-mark.png")} alt="" />
       </span>
       <span><strong>{tr("卓能·河畔轩")}</strong><small>CHEUK NANG RIVERSIDE</small></span>
     </a>
@@ -181,7 +194,7 @@ function Header({ solid, open, setOpen, onBooking }) {
 function Hero() {
   return (
     <section className="hero" id="top">
-      <img className="hero-image" src={asset(`${MATERIAL}/river-view.jpeg`)} alt={tr("卓能河畔轩水岸实景")} fetchPriority="high" />
+      <img className="hero-image" src={asset(`${PHASE2}/hero-aerial.jpg`)} alt={tr("卓能河畔轩改造效果图")} fetchPriority="high" />
       <div className="hero-veil" />
       <div className="hero-line hero-line-a" /><div className="hero-line hero-line-b" />
       <div className="hero-copy">
@@ -189,7 +202,8 @@ function Hero() {
         <h1><span>{tr("卓能")}</span><em>·</em><span>{tr("河畔轩")}</span></h1>
         <div className="hero-rule" />
         <h2>{tr("轻享杭州的丰盈生活")}</h2>
-        <p className="hero-meta">{tr("临平崇贤 · 地铁口 · 公园旁 · 建面约65-138㎡百万级实景现房")}</p>
+        <p className="hero-meta">{tr("临平崇贤 · 滨水生活 · 建面约65-138㎡多元户型")}</p>
+        <span className="visual-status">{tr("项目改造效果图")}</span>
       </div>
       <a className="hero-scroll" href="#heritage"><span>SCROLL</span><ArrowDown size={17} /></a>
       <div className="hero-side-word" aria-hidden="true">RIVERSIDE</div>
@@ -215,10 +229,10 @@ function Heritage() {
       <div className="shell heritage-inner">
         <Reveal>
           <SectionTitle index="01" en="GROUP HERITAGE" title={tr("实力港企 卓能集团首献杭州")} light />
-          <p className="heritage-copy">{tr("卓能集团拥有逾60载深厚企业底蕴。1973年，集团商务体系于香港有限公司成立；从香港到内地，始终秉承“慎思力先”的理念。")}</p>
+          <p className="heritage-copy">{tr("卓能（控股）有限公司成立于1963年；1988年由赵世曾博士收购并更名为卓能。集团专注物业发展与投资，业务布局香港、中国内地、澳门及马来西亚。")}</p>
         </Reveal>
         <div className="heritage-stats">
-          {[['60+','载企业底蕴'],['1973','港交所上市'],['3','大市场布局']].map(([value, label], index) => (
+          {[["1963", "企业成立"], ["0131", "港交所股份代号"], ["4", "主要市场布局"]].map(([value, label], index) => (
             <Reveal className="heritage-stat" delay={index * 90} key={label}><strong>{value}</strong><span>{tr(label)}</span></Reveal>
           ))}
         </div>
@@ -233,19 +247,19 @@ function Project() {
     <section className="project paper" id="project">
       <div className="shell project-grid">
         <Reveal className="project-copy">
-          <SectionTitle index="02" en="PROJECT OVERVIEW" title={<><span>{tr("大城北崛起")}</span><span>{tr("崇贤正当时")}</span></>} />
-          <h3>{tr("你在杭州的第一个家")}</h3>
-          <p>{tr("项目位于杭州临平区崇贤板块核心，踞守绕城内稀缺价格洼地。地铁、商业、教育、医疗与山水生态环伺，以主城级配套和亲民门槛，打造品质生活新标杆。")}</p>
+          <SectionTitle index="02" en="PROJECT OVERVIEW" title={<><span>{tr("水岸现房")}</span><span>{tr("焕新归来")}</span></>} />
+          <h3>{tr("丰盈生活的社区底图")}</h3>
+          <p>{tr("项目位于杭州临平区崇贤板块，总建筑面积约12.3万平方米，规划840套住宅与779个车位。二期网站将完整呈现建筑、景观、售楼处和样板间焕新方案。")}</p>
           <dl>
             <div><dt>{ACTIVE_LOCALE === "en" ? "123,000" : "12.3"}<small>{tr("万㎡")}</small></dt><dd>{tr("项目总建筑面积")}</dd></div>
+            <div><dt>840<small>{tr("套")}</small></dt><dd>{tr("规划住宅")}</dd></div>
             <div><dt>779<small>{tr("个")}</small></dt><dd>{tr("规划车位")}</dd></div>
-            <div><dt>5<small>#</small></dt><dd>{tr("盛景弯邸 首开在即")}</dd></div>
           </dl>
           <a className="text-link" href="#film">{tr("观看项目影片")} <ArrowRight size={18} /></a>
         </Reveal>
         <Reveal className="project-visual" delay={120}>
-          <figure className="project-main"><img src={asset(`${MATERIAL}/community-aerial.jpg`)} alt={tr("卓能河畔轩社区航拍实景")} /><figcaption>{tr("项目航拍实景")}</figcaption></figure>
-          <figure className="project-inset"><img src={asset(`${MATERIAL}/facade.jpg`)} alt={tr("卓能河畔轩建筑实景")} /></figure>
+          <figure className="project-main"><img src={asset(`${PHASE2}/hero-aerial.jpg`)} alt={tr("卓能河畔轩整体改造效果图")} /><figcaption>{tr("整体改造效果图")}</figcaption></figure>
+          <figure className="project-inset"><img src={asset(`${PHASE2}/arrival-gate.jpg`)} alt={tr("卓能河畔轩入口改造效果图")} /><figcaption>{tr("入口改造效果图")}</figcaption></figure>
           <span className="project-ring" aria-hidden="true" />
         </Reveal>
       </div>
@@ -272,37 +286,35 @@ function Location() {
     <section className="location paper" id="location">
       <div className="shell">
         <SectionTitle index="03" en="LOCATION & CONNECTION" title={tr("多维路网 通达全城")} intro={tr("邻立拱墅，全维配套触手可及；一城繁华与自然资源，在日常半径内从容抵达。")} />
-        <div className="location-grid">
-          <Reveal className="map-frame"><img src={asset(`${MATERIAL}/location-map.jpg`)} alt={tr("卓能河畔轩区位与城市配套图")} /></Reveal>
+        <div className="location-grid phase2-location-grid">
+          <Reveal className="map-frame"><img src={asset(`${PHASE2}/location-map.jpg`)} alt={tr("卓能河畔轩区位与城市配套图")} /></Reveal>
           <div className="location-facts">
-            <Reveal className="location-fact">
-              <Train size={27} weight="thin" /><span>{tr("约400m直线距离")}</span><h3>{tr("地铁15号线站口")}</h3><p>{tr("约30分钟直达杭州东，串联运河新城、钱江新城与钱江世纪城。")}</p>
-            </Reveal>
-            <Reveal className="location-fact" delay={80}>
-              <Buildings size={27} weight="thin" /><span>{tr("约700m直线距离")}</span><h3>{tr("秋石高架")}</h3><p>{tr("快速路便捷通达全城，衔接主城繁华生活圈。")}</p>
-            </Reveal>
-            <Reveal className="location-fact" delay={160}>
-              <MapPin size={27} weight="thin" /><span>{tr("商业就在家门口")}</span><h3>{tr("约24万方花园城")}</h3><p>{tr("项目1.5km范围内，招商花园城、上亿广场等大型综合体举步可达。")}</p>
-            </Reveal>
+            {amenityFacts.map((item, index) => (
+              <Reveal className="location-fact" delay={index * 60} key={item.title}>
+                {index === 0 ? <Train size={27} weight="thin" /> : index < 4 ? <Buildings size={27} weight="thin" /> : <MapPin size={27} weight="thin" />}
+                <span>{tr(item.status)}</span><h3>{tr(item.title)}</h3><p>{tr(item.copy)}</p>
+              </Reveal>
+            ))}
           </div>
         </div>
+        <p className="source-note">{tr("配套距离、建设进度及招生范围来自2026年项目资料，最终以政府部门、运营机构及现场实际为准。")}</p>
       </div>
     </section>
   );
 }
 
-function Lifestyle({ active, setActive }) {
-  const scene = lifestyleScenes[active];
+function Community({ active, setActive }) {
+  const scene = communityScenes[active];
   return (
-    <section className="lifestyle" id="lifestyle">
-      <img key={scene.image} className="lifestyle-bg" src={asset(`${MATERIAL}/${scene.image}`)} alt={tr(scene.title)} />
+    <section className="lifestyle" id="community">
+      <img key={scene.image} className="lifestyle-bg" src={asset(`${PHASE2}/${scene.image}`)} alt={tr(scene.title)} />
       <div className="lifestyle-shade" />
-      <div className="lifestyle-head"><span>04</span><p>LIFESTYLE</p><h2>{tr("全维配套 品质生活")}</h2></div>
+      <div className="lifestyle-head"><span>04</span><p>COMMUNITY RENEWAL</p><h2>{tr("鎏光逸境 焕新社区")}</h2></div>
       <div className="lifestyle-content">
-        <p>{scene.en}</p><h3>{tr(scene.title)}</h3><strong>{tr(scene.copy)}</strong>
+        <p>{scene.en}</p><h3>{tr(scene.title)}</h3><strong>{tr(scene.copy)}</strong><em>{tr("改造效果图")}</em>
       </div>
       <div className="scene-tabs">
-        {lifestyleScenes.map((item, index) => (
+        {communityScenes.map((item, index) => (
           <button className={index === active ? "is-active" : ""} type="button" onMouseEnter={() => setActive(index)} onFocus={() => setActive(index)} onClick={() => setActive(index)} key={item.no}>
             <span>{item.no}</span><strong>{tr(item.title)}</strong><i />
           </button>
@@ -312,11 +324,35 @@ function Lifestyle({ active, setActive }) {
   );
 }
 
+function Interiors() {
+  const rooms = [
+    ["small-living.jpg", "约67㎡ 苏式原木风", "客餐厅效果图"],
+    ["small-bedroom.jpg", "约67㎡ 苏式原木风", "主卧效果图"],
+    ["large-living.jpg", "约138㎡ 美式风格", "客餐厅效果图"],
+    ["large-bedroom.jpg", "约138㎡ 美式风格", "客卧效果图"],
+  ];
+  return (
+    <section className="interiors paper" id="interiors">
+      <div className="shell">
+        <SectionTitle index="05" en="INTERIOR COLLECTION" title={tr("从空间尺度 预见生活日常")} intro={tr("以约67㎡和约138㎡两类样板间方案，呈现不同家庭结构下的收纳、会客与休憩场景。")} />
+        <div className="interior-grid">
+          {rooms.map(([image, title, caption], index) => (
+            <Reveal className={`interior-card interior-card-${index + 1}`} delay={index * 70} key={image}>
+              <img src={asset(`${PHASE2}/${image}`)} alt={`${tr(title)} ${tr(caption)}`} loading="lazy" />
+              <div><span>{tr("室内效果图")}</span><h3>{tr(title)}</h3><p>{tr(caption)}</p></div>
+            </Reveal>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function Film() {
   return (
     <section className="film" id="film">
       <div className="film-title shell">
-        <SectionTitle index="05" en="PROJECT FILM" title={tr("造代升级 静候新生代")} intro={tr("实景现房，一所见所得；全面升级，一立面景观焕新；品质可靠，一港企标准保障。")} light />
+        <SectionTitle index="06" en="PROJECT FILM" title={tr("循水入境 看见焕新蓝图")} intro={tr("项目影片保留完整播放入口；画面所示实景与效果方案以现场及最终实施结果为准。")} light />
       </div>
       <Reveal className="film-frame">
         <video controls playsInline preload="metadata" poster={asset(`${MATERIAL}/interior-panorama.jpg`)}>
@@ -333,7 +369,7 @@ function Homes({ active, setActive }) {
   return (
     <section className="homes paper" id="homes">
       <div className="shell">
-        <SectionTitle index="06" en="HOME COLLECTION" title={tr("全能户型 尽享“满配”人生")} intro={tr("5#盛景弯邸，建面约65-138㎡全能户型，以紧凑尺度承载丰盛生活。")} />
+        <SectionTitle index="07" en="HOME COLLECTION" title={tr("多元户型 回应不同家庭结构")} intro={tr("建面约65-138㎡四类户型，以清晰的功能分区承接初次置业、家庭成长与改善需求。")} />
         <div className="home-tabs" role="tablist" aria-label={tr("户型选择")}>
           {unitTypes.map((item, index) => (
             <button type="button" role="tab" aria-selected={index === active} className={index === active ? "is-active" : ""} onClick={() => setActive(index)} key={item.code}>
@@ -343,11 +379,11 @@ function Homes({ active, setActive }) {
         </div>
         <div className="home-detail">
           <Reveal className="home-copy" key={`${unit.code}-copy`}>
-            <p>{unit.code} · {tr(unit.name)}</p><h3>{tr("约")}<strong>{unit.area}</strong><small>{tr("㎡")}</small></h3><h4>{tr(unit.room)}</h4>
+            <p>{unit.code} · {tr(unit.name)}</p><h3>{tr("约")}<strong>{unit.area}</strong><small>{tr("㎡")}</small></h3><h4>{tr(unit.room)}</h4><span className="home-audience">{tr(unit.audience)}</span>
             <ul>{unit.features.map((feature) => <li key={feature}>{tr(feature)}</li>)}</ul>
             <a className="text-link" href="#contact">{tr("预约品鉴")} <ArrowRight size={18} /></a>
           </Reveal>
-          <Reveal className="home-plan" key={`${unit.code}-plan`} delay={90}><img src={asset(`${MATERIAL}/${unit.image}`)} alt={`${unit.code} ${tr(unit.name)} ${tr("约")}${unit.area}${tr("㎡")}`} /></Reveal>
+          <Reveal className="home-plan phase2-home-plan" key={`${unit.code}-plan`} delay={90}><img src={asset(`${PHASE2}/${unit.image}`)} alt={`${unit.code} ${tr(unit.name)} ${tr("约")}${unit.area}${tr("㎡")}`} /></Reveal>
         </div>
       </div>
     </section>
@@ -356,14 +392,14 @@ function Homes({ active, setActive }) {
 
 function Benefits() {
   const items = [
-    ["65㎡起", "绕城内难得百万级友好门槛"],
-    ["租房不如买房", "关注年轻新一代"],
-    ["入住即享丰盈", "邻立拱墅 地铁口旁"],
+    ["一河相望", "滨水生态日常"],
+    ["15号线在建", "城市南北通达"],
+    ["65-138㎡", "多元家庭选择"],
   ];
   return (
     <section className="benefits">
       <div className="shell benefits-inner">
-        <Reveal><p>THREE VALUE PROPOSITIONS</p><h2>{tr("三大利 诚意首开")}</h2><span>{tr("轻享杭州的丰盈生活")}</span></Reveal>
+        <Reveal><p>THREE LIVING DIMENSIONS</p><h2>{tr("丰盈生活 由此展开")}</h2><span>{tr("所有配套与产品信息均以最新公示及现场实际为准")}</span></Reveal>
         <div className="benefit-grid">{items.map(([value, title], index) => <Reveal className="benefit" delay={index * 90} key={title}><span>0{index + 1}</span><p>{tr(title)}</p><strong>{tr(value)}</strong></Reveal>)}</div>
       </div>
     </section>
@@ -379,7 +415,7 @@ function Contact({ onBooking }) {
         <Reveal>
           <p>CHEUK NANG GROUP · HANGZHOU</p>
           <h2>{tr("卓能集团 · 首献杭州")}</h2>
-          <span>{tr("临平崇贤 · 地铁口 · 公园旁 · 建面约65-138㎡百万级实景现房")}</span>
+          <span>{tr("临平崇贤 · 滨水生活 · 建面约65-138㎡多元户型")}</span>
         </Reveal>
         <Reveal className="contact-actions" delay={100}>
           <p>{tr("品鉴热线")}</p><a className="phone-link" href="tel:057186309988">0571 <strong>86309988</strong></a>
@@ -691,6 +727,13 @@ function SiteApp() {
   }, []);
 
   useEffect(() => {
+    const id = decodeURIComponent(globalThis.location?.hash.slice(1) || "");
+    if (!id || id.startsWith("/")) return undefined;
+    const frame = requestAnimationFrame(() => document.getElementById(id)?.scrollIntoView({ block: "start" }));
+    return () => cancelAnimationFrame(frame);
+  }, []);
+
+  useEffect(() => {
     let frame = 0;
     const onScroll = () => {
       cancelAnimationFrame(frame);
@@ -708,7 +751,7 @@ function SiteApp() {
   }, []);
 
   useEffect(() => {
-    const timer = window.setInterval(() => setScene((value) => (value + 1) % lifestyleScenes.length), 6200);
+    const timer = window.setInterval(() => setScene((value) => (value + 1) % communityScenes.length), 6200);
     return () => window.clearInterval(timer);
   }, []);
 
@@ -730,7 +773,8 @@ function SiteApp() {
         <Project />
         <HangzhouChapter />
         <Location />
-        <Lifestyle active={scene} setActive={setScene} />
+        <Community active={scene} setActive={setScene} />
+        <Interiors />
         <Film />
         <Homes active={unit} setActive={setUnit} />
         <Benefits />

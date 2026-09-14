@@ -8,23 +8,26 @@ const distAssetsDir = path.join(projectRoot, "dist", "client", "assets");
 const outputPath = path.join(projectRoot, "卓能河畔轩-离线版.html");
 
 const runtimeAssetRelativePaths = [
-  "assets/ppt/project-aerial.jpg",
+  "assets/brand/cheuk-nang-riverside-mark.png",
   "assets/ppt/project-film.mp4",
-  "assets/ppt/chapter-world.jpg",
-  "assets/ppt/community-aerial.jpg",
-  "assets/ppt/facade.jpg",
-  "assets/ppt/chapter-hangzhou.jpg",
-  "assets/ppt/location-map.jpg",
-  "assets/ppt/river-view.jpeg",
-  "assets/ppt/river-walk.jpeg",
-  "assets/ppt/city-view.png",
-  "assets/ppt/interior.jpeg",
+  "assets/ppt/group-estate.jpeg",
+  "assets/ppt/hangzhou-city-clean.jpg",
   "assets/ppt/interior-panorama.jpg",
-  "assets/ppt/unit-a1.jpg",
-  "assets/ppt/unit-a2.jpg",
-  "assets/ppt/unit-d5.jpg",
-  "assets/ppt/unit-f2.jpg",
-  "assets/ppt/contact.jpg",
+  "assets/ppt/contact-clean.jpg",
+  "assets/phase2/hero-aerial.jpg",
+  "assets/phase2/arrival-gate.jpg",
+  "assets/phase2/location-map.jpg",
+  "assets/phase2/playground.jpg",
+  "assets/phase2/clubhouse-lawn.jpg",
+  "assets/phase2/garden-club.jpg",
+  "assets/phase2/small-living.jpg",
+  "assets/phase2/small-bedroom.jpg",
+  "assets/phase2/large-living.jpg",
+  "assets/phase2/large-bedroom.jpg",
+  "assets/phase2/unit-a1.jpg",
+  "assets/phase2/unit-a2.jpg",
+  "assets/phase2/unit-d5.jpg",
+  "assets/phase2/unit-f2.jpg",
 ];
 
 const mimeTypes = new Map([
@@ -92,7 +95,7 @@ const offlineHtml = `<!doctype html>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#14201f" />
-    <title>卓能河畔轩｜你杭州第一个家</title>
+    <title>卓能河畔轩｜杭州临平崇贤滨水生活</title>
     <style>${escapeInlineStyle(css)}</style>
   </head>
   <body>

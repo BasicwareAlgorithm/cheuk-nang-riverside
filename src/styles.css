@@ -83,7 +83,8 @@ section[id] { scroll-margin-top: 90px; }
 .hero h1 em { color: var(--gold-light); font-size: .54em; font-style: normal; }
 .hero-rule { animation: rule-grow 1.3s ease 2.65s both; background: linear-gradient(90deg, var(--gold-light), transparent); height: 1px; margin: 34px 0 28px; transform-origin: left; width: min(520px,65vw); }
 .hero h2 { animation: title-up 1s ease 2.7s both; font-family: "Songti SC", serif; font-size: clamp(24px,2.4vw,38px); font-weight: 400; letter-spacing: .26em; margin-bottom: 24px; }
-.hero-meta { animation: title-up 1s ease 2.8s both; font-size: 12px; letter-spacing: .16em; line-height: 2; opacity: .82; }
+.hero-meta { animation: title-up 1s ease 2.8s both; font-size: 14px; letter-spacing: .12em; line-height: 2; opacity: .88; }
+.visual-status { animation: title-up 1s ease 2.9s both; border: 1px solid rgba(255,255,255,.45); display: inline-flex; font-size: 11px; letter-spacing: .14em; margin-top: 14px; padding: 7px 11px; }
 .hero-scroll { align-items: center; bottom: 34px; display: flex; font-family: Georgia, serif; font-size: 9px; gap: 14px; letter-spacing: .24em; position: absolute; right: 48px; z-index: 4; }
 .hero-scroll svg { animation: arrow-float 1.7s ease-in-out infinite; }
 .hero-side-word { bottom: -2.5vw; color: rgba(255,255,255,.09); font-family: Georgia, serif; font-size: clamp(110px,16vw,260px); left: -.04em; letter-spacing: -.04em; line-height: .75; pointer-events: none; position: absolute; white-space: nowrap; }
@@ -129,6 +130,7 @@ section[id] { scroll-margin-top: 90px; }
 .project-main figcaption { bottom: 20px; color: #fff; font-size: 9px; left: 23px; letter-spacing: .18em; position: absolute; }
 .project-inset { bottom: 0; box-shadow: 0 24px 60px rgba(11,38,60,.18); height: 260px; left: 0; margin: 0; overflow: hidden; position: absolute; width: 43%; z-index: 2; }
 .project-inset img { height: 100%; object-fit: cover; width: 100%; }
+.project-inset figcaption { background: rgba(4,20,36,.78); bottom: 0; color: #fff; font-size: 11px; left: 0; letter-spacing: .12em; padding: 9px 13px; position: absolute; }
 .project-ring { border: 1px solid rgba(180,139,78,.5); border-radius: 50%; bottom: 2%; height: 280px; left: 26%; position: absolute; width: 280px; }
 
 .chapter-hangzhou { color: #fff; height: 100svh; min-height: 760px; overflow: hidden; position: relative; }
@@ -152,6 +154,11 @@ section[id] { scroll-margin-top: 90px; }
 .location-fact > span { color: var(--gold); font-family: Georgia, serif; font-size: 9px; letter-spacing: .18em; }
 .location-fact h3 { font-family: "Songti SC", serif; font-size: 25px; font-weight: 400; letter-spacing: .08em; margin: 10px 0 12px; }
 .location-fact p { color: var(--muted); font-size: 12px; line-height: 1.8; margin: 0; }
+.phase2-location-grid { align-items: start; }
+.phase2-location-grid .map-frame { aspect-ratio: 16/9; min-height: 0; position: sticky; top: 104px; }
+.phase2-location-grid .map-frame img { object-fit: contain; }
+.phase2-location-grid .location-fact { min-height: 126px; }
+.source-note { border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; letter-spacing: .04em; line-height: 1.8; margin: 34px 0 0; padding-top: 18px; }
 
 .lifestyle { background: var(--navy); color: #fff; height: 100svh; min-height: 780px; overflow: hidden; position: relative; }
 .lifestyle-bg { animation: scene-in 1.2s cubic-bezier(.2,.75,.2,1) both; height: 100%; inset: 0; object-fit: cover; position: absolute; width: 100%; }
@@ -164,6 +171,7 @@ section[id] { scroll-margin-top: 90px; }
 .lifestyle-content > p { color: var(--gold-light); font-family: Georgia, serif; font-size: 10px; letter-spacing: .26em; }
 .lifestyle-content h3 { font-family: "Songti SC", serif; font-size: clamp(45px,5.3vw,82px); font-weight: 400; letter-spacing: .12em; margin: 20px 0; }
 .lifestyle-content strong { font-size: 13px; font-weight: 400; letter-spacing: .08em; line-height: 2; opacity: .78; }
+.lifestyle-content em { border: 1px solid rgba(255,255,255,.55); display: table; font-size: 11px; font-style: normal; letter-spacing: .16em; margin-top: 22px; padding: 7px 10px; }
 .scene-tabs { bottom: 0; display: grid; grid-template-columns: repeat(4,1fr); left: 0; position: absolute; right: 0; z-index: 3; }
 .scene-tabs button { background: rgba(4,21,37,.5); border: 0; border-left: 1px solid var(--white-line); color: #fff; cursor: pointer; min-height: 145px; padding: 30px 3vw; position: relative; text-align: left; }
 .scene-tabs button span { display: block; font-family: Georgia, serif; font-size: 10px; margin-bottom: 16px; opacity: .55; }
@@ -172,6 +180,19 @@ section[id] { scroll-margin-top: 90px; }
 .scene-tabs button.is-active { background: rgba(5,24,41,.82); }
 .scene-tabs button.is-active strong { opacity: 1; }
 .scene-tabs button.is-active i { transform: scaleX(1); }
+
+.interiors { overflow: hidden; padding: 150px 0 170px; }
+.interior-grid { display: grid; gap: 22px; grid-template-columns: repeat(12,1fr); margin-top: 70px; }
+.interior-card { min-height: 390px; overflow: hidden; position: relative; }
+.interior-card-1, .interior-card-4 { grid-column: span 7; }
+.interior-card-2, .interior-card-3 { grid-column: span 5; }
+.interior-card img { height: 100%; object-fit: cover; position: absolute; transition: transform 1s cubic-bezier(.2,.8,.2,1); width: 100%; }
+.interior-card:hover img { transform: scale(1.025); }
+.interior-card::after { background: linear-gradient(0deg,rgba(3,17,30,.78),transparent 55%); content: ""; inset: 0; position: absolute; }
+.interior-card > div { bottom: 0; color: #fff; left: 0; padding: 30px; position: absolute; right: 0; z-index: 2; }
+.interior-card span { color: var(--gold-light); font-size: 11px; letter-spacing: .16em; }
+.interior-card h3 { font-family: "Songti SC",serif; font-size: 26px; font-weight: 400; letter-spacing: .08em; margin: 10px 0 7px; }
+.interior-card p { font-size: 13px; letter-spacing: .08em; margin: 0; opacity: .8; }
 
 .film { background: var(--navy); color: #fff; overflow: hidden; padding: 140px 0 170px; }
 .film-title { margin-bottom: 70px; }
@@ -196,10 +217,13 @@ section[id] { scroll-margin-top: 90px; }
 .home-copy h3 strong { font-family: Georgia,serif; font-size: 82px; font-weight: 400; margin: 0 8px; }
 .home-copy h3 small { font-size: 16px; }
 .home-copy h4 { font-family: "Songti SC",serif; font-size: 19px; font-weight: 400; letter-spacing: .1em; margin: 0 0 35px; }
+.home-audience { color: var(--muted); display: block; font-size: 13px; letter-spacing: .08em; margin: -22px 0 34px; }
 .home-copy ul { border-top: 1px solid var(--line); display: grid; grid-template-columns: 1fr 1fr; margin-bottom: 42px; }
 .home-copy li { border-bottom: 1px solid var(--line); font-size: 11px; letter-spacing: .08em; padding: 14px 0; }
 .home-plan { aspect-ratio: 16 / 9; background: #f8f5ef; box-shadow: 0 24px 65px rgba(10,30,47,.1); min-height: 0; overflow: hidden; }
 .home-plan img { animation: plan-in .7s ease both; height: auto; min-height: 0; object-fit: contain; width: 100%; }
+.phase2-home-plan { align-items: center; display: flex; }
+.phase2-home-plan img { background: #faf8f3; }
 
 .benefits { background: #e8dfd2; padding: 130px 0; }
 .benefits-inner > .reveal:first-child { text-align: center; }
@@ -362,12 +386,15 @@ footer { background: #041526; color: #fff; padding: 46px 0; }
   .project-visual { min-height: 620px; }
   .location { padding: 120px 0; }
   .location-grid { grid-template-columns: 1fr; }
+  .phase2-location-grid .map-frame { position: relative; top: auto; }
   .map-frame { min-height: 560px; }
   .lifestyle { height: auto; min-height: 1080px; }
   .lifestyle-head { left: 24px; top: 90px; }
   .lifestyle-content { bottom: 480px; left: 24px; right: 24px; }
   .scene-tabs { grid-template-columns: 1fr 1fr; }
   .scene-tabs button { min-height: 130px; }
+  .interiors { padding: 120px 0; }
+  .interior-card { grid-column: span 6; min-height: 360px; }
   .film { padding: 110px 0 130px; }
   .film-frame::before { height: 60vw; width: 60vw; }
   .homes { padding: 120px 0; }
@@ -399,6 +426,7 @@ footer { background: #041526; color: #fff; padding: 46px 0; }
   .hero h1 span, .hero h1 em { flex: 0 0 auto; white-space: nowrap; }
   .hero h2 { font-size: clamp(19px,5.6vw,22px); letter-spacing: .14em; line-height: 1.45; margin-bottom: 18px; text-shadow: 0 3px 18px rgba(0,0,0,.7); text-wrap: balance; }
   .hero-meta { font-size: 10px; line-height: 1.9; max-width: min(310px,100%); text-shadow: 0 3px 15px rgba(0,0,0,.8); text-wrap: pretty; }
+  .visual-status { font-size: 10px; }
   .hero-scroll span { display: none; }
   .section-title > p { flex-wrap: wrap; line-height: 1.7; row-gap: 6px; }
   .section-title h2 { font-size: clamp(30px,9.2vw,37px); letter-spacing: .06em; line-height: 1.35; padding-bottom: .08em; text-wrap: balance; word-break: keep-all; }
@@ -435,6 +463,11 @@ footer { background: #041526; color: #fff; padding: 46px 0; }
   .lifestyle-content { bottom: 450px; }
   .lifestyle-content h3 { font-size: 45px; }
   .scene-tabs button { min-height: 140px; padding: 24px; }
+  .interiors { padding: 100px 0; }
+  .interior-grid { gap: 14px; grid-template-columns: 1fr; margin-top: 50px; }
+  .interior-card { grid-column: auto; min-height: 340px; }
+  .interior-card > div { padding: 24px; }
+  .interior-card h3 { font-size: 23px; }
   .film { padding: 95px 0 110px; }
   .film-title { margin-bottom: 48px; }
   .film-frame { width: calc(100% - 24px); }
