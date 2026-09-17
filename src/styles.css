@@ -318,6 +318,8 @@ section[id] { scroll-margin-top: 90px; }
 .contact-actions > .phone-link { display: block; font-family: Georgia,serif; font-size: 24px; letter-spacing: .08em; margin: 12px 0 24px; }
 .contact-actions > .phone-link strong { color: var(--gold-light); font-size: 39px; font-weight: 400; }
 .contact-actions > span { align-items: center; display: flex; font-size: 11px; gap: 10px; letter-spacing: .1em; opacity: .75; }
+.contact-actions > span svg { flex: 0 0 auto; }
+.contact-actions > span span { line-height: 1.7; min-width: 0; overflow-wrap: anywhere; }
 .contact-booking { align-items: center; background: transparent; border: 1px solid rgba(222,200,152,.65); color: #fff; cursor: pointer; display: flex; font-size: 12px; gap: 34px; justify-content: space-between; letter-spacing: .2em; margin-top: 28px; min-width: 240px; padding: 15px 18px; transition: background .3s ease, color .3s ease; }
 .contact-booking:hover { background: var(--gold-light); color: var(--navy); }
 

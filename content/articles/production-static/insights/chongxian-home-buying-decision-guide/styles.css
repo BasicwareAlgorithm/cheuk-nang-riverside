@@ -289,6 +289,9 @@ button { font: inherit; }
 .lead-section-copy p { color: rgba(255,255,255,.67); font: 13px/1.85 "Songti SC", STSong, serif; }
 .lead-section-copy a { display: inline-block; color: var(--gold-light); border-bottom: 1px solid currentColor; font: 12px/1.4 Georgia, serif; padding-bottom: 6px; margin-top: 18px; }
 .lead-form { display: grid; gap: 18px; }
+.phone-only-contact { align-items: center; border-top: 1px solid currentColor; display: flex; flex-wrap: wrap; gap: 10px 16px; margin-top: 18px; padding-top: 18px; }
+.phone-only-contact span { font-size: 12px; }
+.phone-only-contact a { border: 1px solid currentColor; color: inherit; display: inline-block; font-size: 14px; font-weight: 600; padding: 10px 14px; text-decoration: none; }
 .lead-form > label:not(.consent) { display: grid; gap: 8px; }
 .lead-form label > span { font-size: 10px; letter-spacing: .08em; }
 .lead-form input[type="text"], .lead-form input[type="tel"] { width: 100%; color: #fff; background: transparent; border: 0; border-bottom: 1px solid rgba(255,255,255,.34); border-radius: 0; outline: 0; padding: 10px 0 13px; font: 14px/1.4 "PingFang SC", "Microsoft YaHei", sans-serif; }

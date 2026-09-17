@@ -9,6 +9,7 @@ import { collectScriptStrings, hasHan, LOCALES, pageUrl, SITE_ORIGIN, walkJson }
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const outputRoot = path.join(root, "dist", "client");
 const sourceRoot = path.join(root, "content", "articles", "production-static");
+const reservationsEnabled = process.env.VITE_RESERVATIONS_ENABLED === "true";
 const cache = JSON.parse(await readFile(path.join(root, "content", "articles", "locales", "en.json"), "utf8"));
 const toHongKong = OpenCC.Converter({ from: "cn", to: "hk" });
 const pages = [
@@ -85,6 +86,7 @@ const englishOverrides = {
   "项目官网": "Project Website",
   "电话咨询": "Call Us",
   "手机号码": "Mobile Number",
+  "请致电预约或咨询": "Call to book or enquire",
 };
 
 for (const locale of Object.keys(LOCALES)) {
@@ -103,6 +105,10 @@ async function buildHome(locale) {
   $("html").attr("lang", locale);
   $("title").text(homeMeta[locale].title);
   $('meta[name="description"]').attr("content", homeMeta[locale].description);
+  $('meta[property="og:locale"]').attr("content", LOCALES[locale].og);
+  $('meta[property="og:title"]').attr("content", homeMeta[locale].title);
+  $('meta[property="og:description"]').attr("content", homeMeta[locale].description);
+  $('meta[property="og:url"]').attr("content", canonical);
   $('link[rel="canonical"]').attr("href", canonical);
   setAlternates($, "/");
   localizeStructuredData($, locale, "/", homeMeta[locale].name);
@@ -116,6 +122,11 @@ async function buildArticlePage(locale, pagePath) {
   const source = await readFile(sourceFile, "utf8");
   const $ = cheerio.load(source, { decodeEntities: false });
   normalizeAssets($, pagePath);
+  if (!reservationsEnabled) {
+    $("form[data-preview-form]").each((_, form) => {
+      $(form).replaceWith('<div class="phone-only-contact"><span>请致电预约或咨询</span><a href="tel:057186309988">0571 8630 9988</a></div>');
+    });
+  }
   if (locale !== "zh-CN") translateDocument($, locale);
   $("html").attr("lang", locale);
   $('meta[property="og:locale"]').attr("content", LOCALES[locale].og);

@@ -53,7 +53,7 @@ const english = {
   "企业成立": "established", "港交所股份代号": "HKEX stock code", "主要市场布局": "principal markets",
   "沿时间长河 稳健前行": "A steady course through time", "从建筑专业起点到跨区域物业发展，时间线梳理卓能重要人物与企业历程。个人经历与公司事件分别标注，避免混为同一口径。": "From an architectural foundation to property development across multiple markets, this timeline distinguishes personal milestones from corporate events.",
   "专业起点": "Professional foundation", "赵世曾博士于英国杜伦大学建筑系毕业。": "Dr Cecil Chao graduated from the Department of Architecture at Durham University in the United Kingdom.",
-  "建筑实践": "Architectural practice", "加入香港特别行政区政府建筑署担任建筑师。": "Joined the Hong Kong Government's Architectural Services Department as an architect.",
+  "建筑实践": "Architectural practice", "加入香港政府建筑署担任建筑师。": "Joined the Hong Kong Government's Architectural Services Department as an architect.",
   "企业前身": "Company origins", "公司前身远东羊毛纤维有限公司成立。": "The company's predecessor, Far East Wool Fibre Limited, was established.",
   "事业发展": "Business development", "华光控股成立并上市。": "Wah Kwong Holdings was established and listed.",
   "卓能启程": "The Cheuk Nang chapter", "赵世曾博士收购远东并更名为卓能，集团由此开启新的发展阶段。": "Dr Cecil Chao acquired Far East and renamed it Cheuk Nang, beginning a new phase of development.",
@@ -83,7 +83,7 @@ const english = {
   "大城北崛起": "North Hangzhou Rising", "崇贤正当时": "Chongxian's Moment",
   "你在杭州的第一个家": "Your first home in Hangzhou",
   "水岸现房": "Riverside Living", "焕新归来": "Renewed for Today", "丰盈生活的社区底图": "A community framework for fuller living",
-  "项目位于杭州临平区崇贤板块，总建筑面积约12.3万平方米，规划840套住宅与779个车位。二期网站将完整呈现建筑、景观、售楼处和样板间焕新方案。": "Located in Chongxian, Linping, the development has a total gross floor area of approximately 123,000 sq m, with 840 planned homes and 779 parking spaces. This Phase 2 experience presents the architectural, landscape, sales-centre and show-home renewal proposals.",
+  "项目位于杭州临平区崇贤板块，总建筑面积约12.3万平方米，规划840套住宅与779个车位。本网站呈现建筑、景观、售楼处和样板间焕新方案。": "Located in Chongxian, Linping, the development has a total gross floor area of approximately 123,000 sq m, with 840 planned homes and 779 parking spaces. This site presents the architectural, landscape, sales-centre and show-home renewal proposals.",
   "项目位于杭州临平区崇贤板块核心，踞守绕城内稀缺价格洼地。地铁、商业、教育、医疗与山水生态环伺，以主城级配套和亲民门槛，打造品质生活新标杆。": "Set in the heart of Chongxian, Linping, the project brings transport, retail, education, healthcare and waterside scenery together at an accessible entry point.",
   "万㎡": " sq m", "个": " spaces", "套": " homes", "项目总建筑面积": "total gross floor area", "规划住宅": "planned homes", "规划车位": "planned parking spaces", "盛景弯邸 首开在即": "Building 5 collection",
   "卓能河畔轩整体改造效果图": "Overall Cheuk Nang Riverside renovation rendering", "整体改造效果图": "Overall renovation rendering", "卓能河畔轩入口改造效果图": "Cheuk Nang Riverside entrance renovation rendering", "入口改造效果图": "Entrance renovation rendering",
@@ -123,6 +123,7 @@ const english = {
   "一河相望": "Across the water", "滨水生态日常": "A waterside everyday", "15号线在建": "Line 15 underway", "城市南北通达": "North–south city links", "65-138㎡": "65–138 sq m", "多元家庭选择": "Choices for different households", "丰盈生活 由此展开": "A fuller life begins here", "所有配套与产品信息均以最新公示及现场实际为准": "All amenity and product information remains subject to the latest official disclosures and actual site conditions",
   "请输入2至30个字符的姓名。": "Please enter a name between 2 and 30 characters.", "请输入正确的中国大陆手机号码。": "Please enter a valid Mainland China mobile number.", "提交失败，请稍后再试。": "Submission failed. Please try again later.", "预约已提交，置业顾问会尽快与您联系。": "Your request has been received. A property adviser will contact you shortly.", "网络响应超时，请稍后再试。": "The network timed out. Please try again later.",
   "关闭预约表单": "Close booking form", "留下联系方式，置业顾问将与您确认到访时间。": "Leave your contact details and our property adviser will confirm a viewing time.", "提交成功": "Submitted", "完成": "Done", "姓名": "Name", "请输入您的姓名": "Enter your name", "手机号码": "Mobile number", "请输入您的手机号码": "Enter your mobile number", "公司": "Company", "我同意销售人员使用上述信息联系我，仅用于预约参观与项目咨询。": "I agree that the sales team may use these details solely to contact me about a viewing and project enquiry.", "正在提交": "Submitting", "确认预约": "Confirm Booking", "或致电品鉴热线 0571 8630 9988": "Or call +86 571 8630 9988",
+  "电话预约": "Book by phone", "杭州市临平区崇贤街道崇杭街108-17号卓能河畔轩销售中心": "Cheuk Nang Riverside Sales Centre, No. 108-17 Chonghang Street, Chongxian, Linping District, Hangzhou",
   "选择繁體中文": "Switch to Traditional Chinese", "选择英文": "Switch to English", "根据您的浏览器语言，我们为您准备了更合适的版本。": "A version matching your browser language is available.", "切换语言": "Switch language", "暂不切换": "Not now",
 };
 

@@ -23,6 +23,7 @@ const DEPLOY_BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 const RESERVATION_ENDPOINT = "/api/reservations";
 const ADMIN_ENDPOINT = "/api/admin/reservations";
 const PHONE_PATTERN = /^(?:\+?86[- ]?)?1[3-9]\d{9}$/;
+const RESERVATIONS_ENABLED = import.meta.env.VITE_RESERVATIONS_ENABLED === "true";
 
 function asset(path) {
   return globalThis.__OFFLINE_ASSETS__?.[path] ?? `${DEPLOY_BASE}${path}`;
@@ -80,7 +81,7 @@ const amenityFacts = [
 
 const milestones = [
   { year: "1961", label: "专业起点", copy: "赵世曾博士于英国杜伦大学建筑系毕业。" },
-  { year: "1962", label: "建筑实践", copy: "加入香港特别行政区政府建筑署担任建筑师。" },
+  { year: "1962", label: "建筑实践", copy: "加入香港政府建筑署担任建筑师。" },
   { year: "1963", label: "企业前身", copy: "公司前身远东羊毛纤维有限公司成立。" },
   { year: "1972/1973", label: "事业发展", copy: "华光控股成立并上市。" },
   { year: "1988", label: "卓能启程", copy: "赵世曾博士收购远东并更名为卓能，集团由此开启新的发展阶段。", featured: true },
@@ -286,9 +287,15 @@ function Header({ solid, open, setOpen, onBooking }) {
             <span>{String(index + 1).padStart(2, "0")}</span><strong>{tr(label)}</strong><ArrowRight size={20} />
           </a>
         ))}
-        <button className="mobile-booking" type="button" onClick={() => { setOpen(false); onBooking(); }}>
-          <span>09</span><strong>{tr("预约参观")}</strong><ArrowRight size={20} />
-        </button>
+        {RESERVATIONS_ENABLED ? (
+          <button className="mobile-booking" type="button" onClick={() => { setOpen(false); onBooking(); }}>
+            <span>09</span><strong>{tr("预约参观")}</strong><ArrowRight size={20} />
+          </button>
+        ) : (
+          <a className="mobile-booking" href="tel:057186309988" onClick={() => setOpen(false)}>
+            <span>09</span><strong>{tr("电话预约")}</strong><ArrowRight size={20} />
+          </a>
+        )}
         <LanguageSwitcher />
       </div>
     </header>
@@ -404,7 +411,7 @@ function Project() {
         <Reveal className="project-copy">
           <SectionTitle index="02" en="PROJECT OVERVIEW" title={<><span>{tr("水岸现房")}</span><span>{tr("焕新归来")}</span></>} />
           <h3>{tr("丰盈生活的社区底图")}</h3>
-          <p>{tr("项目位于杭州临平区崇贤板块，总建筑面积约12.3万平方米，规划840套住宅与779个车位。二期网站将完整呈现建筑、景观、售楼处和样板间焕新方案。")}</p>
+          <p>{tr("项目位于杭州临平区崇贤板块，总建筑面积约12.3万平方米，规划840套住宅与779个车位。本网站呈现建筑、景观、售楼处和样板间焕新方案。")}</p>
           <dl>
             <div><dt>{ACTIVE_LOCALE === "en" ? "123,000" : "12.3"}<small>{tr("万㎡")}</small></dt><dd>{tr("项目总建筑面积")}</dd></div>
             <div><dt>840<small>{tr("套")}</small></dt><dd>{tr("规划住宅")}</dd></div>
@@ -641,10 +648,16 @@ function Contact({ onBooking }) {
         </Reveal>
         <Reveal className="contact-actions" delay={100}>
           <p>{tr("品鉴热线")}</p><a className="phone-link" href="tel:057186309988">0571 <strong>86309988</strong></a>
-          <span><MapPin size={17} />{tr("卓能河畔轩销售中心")}</span>
-          <button className="contact-booking" type="button" onClick={onBooking}>
-            <span>{tr("预约参观")}</span><ArrowRight size={18} />
-          </button>
+          <span><MapPin size={17} /><span>{tr("杭州市临平区崇贤街道崇杭街108-17号卓能河畔轩销售中心")}</span></span>
+          {RESERVATIONS_ENABLED ? (
+            <button className="contact-booking" type="button" onClick={onBooking}>
+              <span>{tr("预约参观")}</span><ArrowRight size={18} />
+            </button>
+          ) : (
+            <a className="contact-booking" href="tel:057186309988">
+              <span>{tr("电话预约")}</span><ArrowRight size={18} />
+            </a>
+          )}
         </Reveal>
       </div>
     </section>
@@ -986,9 +999,15 @@ function SiteApp() {
     <>
       <div className="page-progress" aria-hidden="true" />
       <Header solid={solid} open={menuOpen} setOpen={setMenuOpen} onBooking={openBooking} />
-      <button className="booking-float" type="button" onClick={openBooking}>
-        <small>PRIVATE VIEWING</small><span>{tr("预约参观")}</span><ArrowRight size={17} />
-      </button>
+      {RESERVATIONS_ENABLED ? (
+        <button className="booking-float" type="button" onClick={openBooking}>
+          <small>PRIVATE VIEWING</small><span>{tr("预约参观")}</span><ArrowRight size={17} />
+        </button>
+      ) : (
+        <a className="booking-float" href="tel:057186309988" aria-label={`${tr("电话预约")} 0571 8630 9988`}>
+          <small>PRIVATE VIEWING</small><span>{tr("电话预约")}</span><ArrowRight size={17} />
+        </a>
+      )}
       <main>
         <Hero />
         <Heritage />
@@ -1009,16 +1028,16 @@ function SiteApp() {
         <Contact onBooking={openBooking} />
       </main>
       <Footer />
-      <BookingModal open={bookingOpen} onClose={closeBooking} />
+      {RESERVATIONS_ENABLED && <BookingModal open={bookingOpen} onClose={closeBooking} />}
       <LanguageSuggestion />
     </>
   );
 }
 
 export function App() {
-  if (
+  if (RESERVATIONS_ENABLED && (
     globalThis.location?.hostname === "records.cheuknangriverside.com"
     || globalThis.location?.hash.startsWith("#/admin/reservations")
-  ) return <ReservationAdmin />;
+  )) return <ReservationAdmin />;
   return <SiteApp />;
 }

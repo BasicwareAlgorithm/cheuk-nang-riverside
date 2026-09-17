@@ -50,9 +50,18 @@ test("language sitemap index references all three language maps", async () => {
   assert.match(english, /hreflang="x-default"/);
 });
 
-test("localized interactive forms still submit to the same-origin API", async () => {
-  const html = await readFile(path.join(outputRoot, "en", articlePath, "index.html"), "utf8");
-  const script = await readFile(path.join(outputRoot, "en", "seo-assets", "cluster.js"), "utf8");
-  assert.match(html, /action="\/api\/content-tool-leads"/);
-  assert.match(script, /fetch\('\/api\/reservations'/);
+test("database-free articles offer phone contact without lead forms", async () => {
+  for (const prefix of ["", "zh-hk", "en"]) {
+    const html = await readFile(path.join(outputRoot, prefix, articlePath, "index.html"), "utf8");
+    assert.doesNotMatch(html, /data-preview-form|action="\/api\//);
+    assert.match(html, /href="tel:057186309988"/);
+  }
+});
+
+test("localized homepage has matching share metadata", async () => {
+  const html = await readFile(path.join(outputRoot, "en", "index.html"), "utf8");
+  assert.match(html, /property="og:locale" content="en_US"/);
+  assert.match(html, /property="og:title" content="Cheuk Nang Riverside/);
+  assert.match(html, /property="og:url" content="https:\/\/www\.cheuknangriverside\.com\/en\/"/);
+  assert.doesNotMatch(html, /property="og:description" content="[^"]*\p{Script=Han}/u);
 });
