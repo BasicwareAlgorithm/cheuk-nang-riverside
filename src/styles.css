@@ -339,6 +339,7 @@ section[id] { scroll-margin-top: 90px; }
 .booking-intro h2 { font-family: "Songti SC",serif; font-size: 48px; font-weight: 400; letter-spacing: .15em; margin-bottom: 24px; position: relative; z-index: 1; }
 .booking-intro > span { font-size: 12px; letter-spacing: .08em; line-height: 2; opacity: .72; position: relative; z-index: 1; }
 .booking-form, .booking-success { align-self: center; padding: 74px 60px 56px; }
+.booking-test-note { background: rgba(180,139,78,.1); border-left: 2px solid var(--gold); color: var(--muted); font-size: 12px; line-height: 1.75; margin: 0 0 26px; padding: 12px 14px; }
 .booking-form > label:not(.booking-consent):not(.booking-honeypot) { display: grid; gap: 11px; margin-bottom: 27px; }
 .booking-form > label > span { font-size: 11px; letter-spacing: .14em; }
 .booking-form input[type="text"], .booking-form input[type="tel"] { background: transparent; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; color: var(--ink); font-size: 15px; outline: 0; padding: 12px 0 15px; transition: border-color .25s ease; width: 100%; }

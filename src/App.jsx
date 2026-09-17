@@ -23,7 +23,10 @@ const DEPLOY_BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 const RESERVATION_ENDPOINT = "/api/reservations";
 const ADMIN_ENDPOINT = "/api/admin/reservations";
 const PHONE_PATTERN = /^(?:\+?86[- ]?)?1[3-9]\d{9}$/;
-const RESERVATIONS_ENABLED = import.meta.env.VITE_RESERVATIONS_ENABLED === "true";
+const IS_TEST_RESERVATION_ENVIRONMENT = import.meta.env.DEV
+  || globalThis.location?.hostname.endsWith(".chatgpt.site")
+  || import.meta.env.VITE_RESERVATIONS_ENABLED === "false";
+const RESERVATIONS_ENABLED = !IS_TEST_RESERVATION_ENVIRONMENT;
 
 function asset(path) {
   return globalThis.__OFFLINE_ASSETS__?.[path] ?? `${DEPLOY_BASE}${path}`;
@@ -287,15 +290,9 @@ function Header({ solid, open, setOpen, onBooking }) {
             <span>{String(index + 1).padStart(2, "0")}</span><strong>{tr(label)}</strong><ArrowRight size={20} />
           </a>
         ))}
-        {RESERVATIONS_ENABLED ? (
-          <button className="mobile-booking" type="button" onClick={() => { setOpen(false); onBooking(); }}>
-            <span>09</span><strong>{tr("预约参观")}</strong><ArrowRight size={20} />
-          </button>
-        ) : (
-          <a className="mobile-booking" href="tel:057186309988" onClick={() => setOpen(false)}>
-            <span>09</span><strong>{tr("电话预约")}</strong><ArrowRight size={20} />
-          </a>
-        )}
+        <button className="mobile-booking" type="button" onClick={() => { setOpen(false); onBooking(); }}>
+          <span>09</span><strong>{tr("预约参观")}</strong><ArrowRight size={20} />
+        </button>
         <LanguageSwitcher />
       </div>
     </header>
@@ -305,7 +302,7 @@ function Header({ solid, open, setOpen, onBooking }) {
 function Hero() {
   return (
     <section className="hero" id="top">
-      <img className="hero-image" src={asset(`${PHASE2}/hero-aerial.jpg`)} alt={tr("卓能河畔轩改造效果图")} fetchPriority="high" />
+      <img className="hero-image" src={asset(`${MATERIAL}/river-view.jpeg`)} alt={tr("卓能河畔轩水岸实景")} fetchPriority="high" />
       <div className="hero-veil" />
       <div className="hero-line hero-line-a" /><div className="hero-line hero-line-b" />
       <div className="hero-copy">
@@ -420,7 +417,7 @@ function Project() {
           <a className="text-link" href="#film">{tr("观看项目影片")} <ArrowRight size={18} /></a>
         </Reveal>
         <Reveal className="project-visual" delay={120}>
-          <figure className="project-main"><img src={asset(`${PHASE2}/hero-aerial.jpg`)} alt={tr("卓能河畔轩整体改造效果图")} /><figcaption>{tr("整体改造效果图")}</figcaption></figure>
+          <figure className="project-main"><img src={asset(`${MATERIAL}/river-view.jpeg`)} alt={tr("卓能河畔轩水岸实景")} /><figcaption>{tr("水岸实景")}</figcaption></figure>
           <figure className="project-inset"><img src={asset(`${PHASE2}/arrival-gate.jpg`)} alt={tr("卓能河畔轩入口改造效果图")} /><figcaption>{tr("入口改造效果图")}</figcaption></figure>
           <span className="project-ring" aria-hidden="true" />
         </Reveal>
@@ -649,15 +646,9 @@ function Contact({ onBooking }) {
         <Reveal className="contact-actions" delay={100}>
           <p>{tr("品鉴热线")}</p><a className="phone-link" href="tel:057186309988">0571 <strong>86309988</strong></a>
           <span><MapPin size={17} /><span>{tr("杭州市临平区崇贤街道崇杭街108-17号卓能河畔轩销售中心")}</span></span>
-          {RESERVATIONS_ENABLED ? (
-            <button className="contact-booking" type="button" onClick={onBooking}>
-              <span>{tr("预约参观")}</span><ArrowRight size={18} />
-            </button>
-          ) : (
-            <a className="contact-booking" href="tel:057186309988">
-              <span>{tr("电话预约")}</span><ArrowRight size={18} />
-            </a>
-          )}
+          <button className="contact-booking" type="button" onClick={onBooking}>
+            <span>{tr("预约参观")}</span><ArrowRight size={18} />
+          </button>
         </Reveal>
       </div>
     </section>
@@ -701,6 +692,13 @@ function BookingModal({ open, onClose }) {
     if (!PHONE_PATTERN.test(phone)) {
       setStatus("error");
       setMessage(tr("请输入正确的中国大陆手机号码。"));
+      return;
+    }
+
+    if (!RESERVATIONS_ENABLED) {
+      form.reset();
+      setStatus("success");
+      setMessage(tr("这是测试表单，提交内容不会保存或发送给销售人员。"));
       return;
     }
 
@@ -751,6 +749,7 @@ function BookingModal({ open, onClose }) {
           </div>
         ) : (
           <form className="booking-form" onSubmit={handleSubmit}>
+            {!RESERVATIONS_ENABLED && <p className="booking-test-note">{tr("测试环境：你可以体验表单流程，但提交内容不会保存或发送。")}</p>}
             <label>
               <span>{tr("姓名")}</span>
               <input ref={nameRef} name="name" type="text" autoComplete="name" minLength="2" maxLength="30" placeholder={tr("请输入您的姓名")} required />
@@ -999,15 +998,9 @@ function SiteApp() {
     <>
       <div className="page-progress" aria-hidden="true" />
       <Header solid={solid} open={menuOpen} setOpen={setMenuOpen} onBooking={openBooking} />
-      {RESERVATIONS_ENABLED ? (
-        <button className="booking-float" type="button" onClick={openBooking}>
-          <small>PRIVATE VIEWING</small><span>{tr("预约参观")}</span><ArrowRight size={17} />
-        </button>
-      ) : (
-        <a className="booking-float" href="tel:057186309988" aria-label={`${tr("电话预约")} 0571 8630 9988`}>
-          <small>PRIVATE VIEWING</small><span>{tr("电话预约")}</span><ArrowRight size={17} />
-        </a>
-      )}
+      <button className="booking-float" type="button" onClick={openBooking}>
+        <small>PRIVATE VIEWING</small><span>{tr("预约参观")}</span><ArrowRight size={17} />
+      </button>
       <main>
         <Hero />
         <Heritage />
@@ -1028,7 +1021,7 @@ function SiteApp() {
         <Contact onBooking={openBooking} />
       </main>
       <Footer />
-      {RESERVATIONS_ENABLED && <BookingModal open={bookingOpen} onClose={closeBooking} />}
+      <BookingModal open={bookingOpen} onClose={closeBooking} />
       <LanguageSuggestion />
     </>
   );

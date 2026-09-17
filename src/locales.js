@@ -19,7 +19,7 @@ const english = {
   "预约参观": "Book a Viewing",
   "卓能河畔轩首页": "Cheuk Nang Riverside home",
   "卓能·河畔轩": "Cheuk Nang Riverside",
-  "卓能河畔轩水岸实景": "Riverside setting at Cheuk Nang Riverside",
+  "卓能河畔轩水岸实景": "Riverside setting at Cheuk Nang Riverside", "水岸实景": "Riverside setting",
   "卓能集团 · 首献杭州": "Cheuk Nang Group · Hangzhou Debut",
   "卓能": "Cheuk Nang",
   "河畔轩": "Riverside",
@@ -123,6 +123,7 @@ const english = {
   "一河相望": "Across the water", "滨水生态日常": "A waterside everyday", "15号线在建": "Line 15 underway", "城市南北通达": "North–south city links", "65-138㎡": "65–138 sq m", "多元家庭选择": "Choices for different households", "丰盈生活 由此展开": "A fuller life begins here", "所有配套与产品信息均以最新公示及现场实际为准": "All amenity and product information remains subject to the latest official disclosures and actual site conditions",
   "请输入2至30个字符的姓名。": "Please enter a name between 2 and 30 characters.", "请输入正确的中国大陆手机号码。": "Please enter a valid Mainland China mobile number.", "提交失败，请稍后再试。": "Submission failed. Please try again later.", "预约已提交，置业顾问会尽快与您联系。": "Your request has been received. A property adviser will contact you shortly.", "网络响应超时，请稍后再试。": "The network timed out. Please try again later.",
   "关闭预约表单": "Close booking form", "留下联系方式，置业顾问将与您确认到访时间。": "Leave your contact details and our property adviser will confirm a viewing time.", "提交成功": "Submitted", "完成": "Done", "姓名": "Name", "请输入您的姓名": "Enter your name", "手机号码": "Mobile number", "请输入您的手机号码": "Enter your mobile number", "公司": "Company", "我同意销售人员使用上述信息联系我，仅用于预约参观与项目咨询。": "I agree that the sales team may use these details solely to contact me about a viewing and project enquiry.", "正在提交": "Submitting", "确认预约": "Confirm Booking", "或致电品鉴热线 0571 8630 9988": "Or call +86 571 8630 9988",
+  "测试环境：你可以体验表单流程，但提交内容不会保存或发送。": "Test environment: you can experience the form, but submissions are not stored or sent.", "这是测试表单，提交内容不会保存或发送给销售人员。": "This is a test form. Your submission was not stored or sent to the sales team.",
   "电话预约": "Book by phone", "杭州市临平区崇贤街道崇杭街108-17号卓能河畔轩销售中心": "Cheuk Nang Riverside Sales Centre, No. 108-17 Chonghang Street, Chongxian, Linping District, Hangzhou",
   "选择繁體中文": "Switch to Traditional Chinese", "选择英文": "Switch to English", "根据您的浏览器语言，我们为您准备了更合适的版本。": "A version matching your browser language is available.", "切换语言": "Switch language", "暂不切换": "Not now",
 };

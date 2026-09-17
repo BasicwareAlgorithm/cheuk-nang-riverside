@@ -21,7 +21,7 @@ test("phase 2 homepage uses reviewed facts and status-qualified claims", async (
 
 test("phase 2 source assets required by the homepage are local", async () => {
   const assets = [
-    "hero-aerial.jpg", "arrival-gate.jpg", "clubhouse-lawn.jpg", "playground.jpg",
+    "arrival-gate.jpg", "clubhouse-lawn.jpg", "playground.jpg",
     "sparse-grove.jpg", "location-map.jpg", "group-works-hk.jpg", "group-works-regional.jpg",
     "landscape-masterplan.jpg", "commercial-street.jpg", "north-entrance.jpg", "east-entrance.jpg",
     "liuguang-courtyard.jpg", "art-screen.jpg", "liuguang-island.jpg", "sales-centre-plan.jpg",
@@ -55,11 +55,23 @@ test("phase 2 sections cover community renewal, show homes and home selection", 
   assert.match(app, /document\.getElementById\(id\)\?\.scrollIntoView/);
 });
 
+test("test mode keeps the appointment form visible without sending customer data", async () => {
+  const app = await readFile(path.join(root, "src", "App.jsx"), "utf8");
+
+  assert.match(app, /function BookingModal/);
+  assert.match(app, /IS_TEST_RESERVATION_ENVIRONMENT/);
+  assert.match(app, /hostname\.endsWith\("\.chatgpt\.site"\)/);
+  assert.match(app, /const RESERVATIONS_ENABLED = !IS_TEST_RESERVATION_ENVIRONMENT/);
+  assert.match(app, /这是测试表单，提交内容不会保存或发送给销售人员。/);
+  assert.match(app, /<BookingModal open=\{bookingOpen\} onClose=\{closeBooking\} \/>/);
+  assert.match(app, /if \(!RESERVATIONS_ENABLED\) \{/);
+});
+
 test("homepage exposes a share title, description and phase 2 cover image", async () => {
   const html = await readFile(path.join(root, "index.html"), "utf8");
 
   assert.match(html, /property="og:title"/);
   assert.match(html, /property="og:description"/);
-  assert.match(html, /property="og:image" content="https:\/\/www\.cheuknangriverside\.com\/assets\/phase2\/hero-aerial\.jpg"/);
+  assert.match(html, /property="og:image" content="https:\/\/www\.cheuknangriverside\.com\/assets\/ppt\/river-view\.jpeg"/);
   assert.match(html, /name="twitter:card" content="summary_large_image"/);
 });
