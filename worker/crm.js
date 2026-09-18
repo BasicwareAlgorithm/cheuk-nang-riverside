@@ -63,10 +63,35 @@ async function verifyPassword(password, stored) {
   }
 }
 
-async function sessionSignature(salesId, expiresAt, secret) {
+async function hmacSignature(message, secret) {
   const key = await crypto.subtle.importKey("raw", textEncoder.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
-  const signature = await crypto.subtle.sign("HMAC", key, textEncoder.encode(`crm-sales:${salesId}:${expiresAt}`));
+  const signature = await crypto.subtle.sign("HMAC", key, textEncoder.encode(message));
   return bytesToHex(new Uint8Array(signature));
+}
+
+async function sessionSignature(salesId, expiresAt, secret) {
+  return hmacSignature(`crm-sales:${salesId}:${expiresAt}`, secret);
+}
+
+export async function createInviteSignature(inviteCode, secret) {
+  return hmacSignature(`crm-invite:${normalizeInviteCode(inviteCode)}`, secret);
+}
+
+async function isValidInviteSignature(inviteCode, signature, env) {
+  if (!env.CRM_INVITE_SECRET || !/^[0-9a-f]{64}$/i.test(String(signature || ""))) return false;
+  const expected = await createInviteSignature(inviteCode, env.CRM_INVITE_SECRET);
+  return constantTimeEqual(String(signature), expected);
+}
+
+async function salesInviteUrl(request, inviteCode, env) {
+  if (!env.CRM_INVITE_SECRET) return null;
+  const url = new URL(request.url);
+  url.pathname = "/";
+  url.search = "";
+  url.hash = "";
+  url.searchParams.set("invite", inviteCode);
+  url.searchParams.set("sig", await createInviteSignature(inviteCode, env.CRM_INVITE_SECRET));
+  return url.toString();
 }
 
 async function createSalesSession(salesId, env) {
@@ -129,11 +154,11 @@ async function audit(env, entry) {
     .run();
 }
 
-export async function recordCrmReservation(env, { name, phone, inviteCode, reservationId }) {
+export async function recordCrmReservation(env, { name, phone, inviteCode, inviteSignature, reservationId }) {
   if (!env.DB || !(await crmSchemaReady(env))) return { captured: false, reason: "schema_unavailable" };
   const normalizedPhone = normalizePhone(phone);
   const sourceCode = normalizeInviteCode(inviteCode);
-  const sourceSales = await activeSalesForInvite(env, sourceCode);
+  const sourceSales = (await isValidInviteSignature(sourceCode, inviteSignature, env)) ? await activeSalesForInvite(env, sourceCode) : null;
   let customer = await env.DB.prepare("SELECT id, sales_id FROM crm_customers WHERE phone = ?").bind(normalizedPhone).first();
 
   if (!customer) {
@@ -184,7 +209,7 @@ async function updateLeadForSales(env, sales, customerId, body) {
   return json({ ok: true });
 }
 
-async function adminCreateSales(env, body) {
+async function adminCreateSales(request, env, body) {
   const displayName = validText(body.displayName, 2, 30);
   const loginName = validText(body.loginName, 3, 48).toLowerCase();
   const password = String(body.password || "");
@@ -198,7 +223,7 @@ async function adminCreateSales(env, body) {
       .bind(displayName, loginName, passwordHash, inviteCode)
       .run();
     await audit(env, { actorType: "admin", action: "sales_account_created", toSalesId: result.meta?.last_row_id, reason: inviteCode });
-    return json({ ok: true, sales: { id: result.meta?.last_row_id, displayName, loginName, inviteCode, active: true } }, 201);
+    return json({ ok: true, sales: { id: result.meta?.last_row_id, displayName, loginName, inviteCode, inviteUrl: await salesInviteUrl(request, inviteCode, env), active: true } }, 201);
   } catch (error) {
     if (/UNIQUE constraint failed/i.test(error.message)) return json({ ok: false, message: "登录名或邀请码已存在。" }, 409);
     throw error;
@@ -235,7 +260,7 @@ export async function handleCrmApi(request, env, isAdmin) {
     const sales = await env.DB.prepare("SELECT id, display_name, login_name, invite_code, password_hash, active FROM crm_sales_accounts WHERE login_name = ?").bind(loginName).first();
     if (!sales?.active || !(await verifyPassword(password, sales.password_hash))) return json({ ok: false, message: "登录名或密码不正确。" }, 401);
     const session = await createSalesSession(sales.id, env);
-    return json({ ok: true, sales: { id: sales.id, displayName: sales.display_name, inviteCode: sales.invite_code } }, 200, {
+    return json({ ok: true, sales: { id: sales.id, displayName: sales.display_name, inviteCode: sales.invite_code, inviteUrl: await salesInviteUrl(request, sales.invite_code, env) } }, 200, {
       "set-cookie": `${CRM_SALES_COOKIE}=${session}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=${CRM_SESSION_MAX_AGE_SECONDS}`,
     });
   }
@@ -248,12 +273,13 @@ export async function handleCrmApi(request, env, isAdmin) {
     if (!(await isAdmin(request, env))) return json({ ok: false, message: "请先输入管理员密码。" }, 401);
     if (path === "admin/sales" && request.method === "GET") {
       const result = await env.DB.prepare("SELECT id, display_name, login_name, invite_code, active, invite_expires_at, created_at FROM crm_sales_accounts ORDER BY id ASC").all();
-      return json({ ok: true, sales: result.results || [] });
+      const sales = await Promise.all((result.results || []).map(async (person) => ({ ...person, invite_url: await salesInviteUrl(request, person.invite_code, env) })));
+      return json({ ok: true, sales });
     }
     if (path === "admin/sales" && request.method === "POST") {
       let body;
       try { body = await request.json(); } catch { return json({ ok: false, message: "请求格式无效。" }, 400); }
-      return adminCreateSales(env, body);
+      return adminCreateSales(request, env, body);
     }
     if (path === "admin/leads" && request.method === "GET") return json({ ok: true, leads: await listLeads(env) });
     const assignMatch = path.match(/^admin\/leads\/(\d+)\/assign$/);
@@ -267,7 +293,7 @@ export async function handleCrmApi(request, env, isAdmin) {
 
   const sales = await salesSession(request, env);
   if (!sales) return json({ ok: false, message: "请先登录销售后台。" }, 401);
-  if (path === "me" && request.method === "GET") return json({ ok: true, sales: { id: sales.id, displayName: sales.display_name, inviteCode: sales.invite_code } });
+  if (path === "me" && request.method === "GET") return json({ ok: true, sales: { id: sales.id, displayName: sales.display_name, inviteCode: sales.invite_code, inviteUrl: await salesInviteUrl(request, sales.invite_code, env) } });
   if (path === "leads" && request.method === "GET") return json({ ok: true, leads: await listLeads(env, sales.id) });
   const leadMatch = path.match(/^leads\/(\d+)$/);
   if (leadMatch && request.method === "PATCH") {

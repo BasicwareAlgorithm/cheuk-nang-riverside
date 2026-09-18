@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import QRCode from "qrcode";
 import {
   ArrowDown,
   ArrowRight,
@@ -39,20 +40,31 @@ function normalizeInviteCode(value) {
   return String(value || "").trim().toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 32);
 }
 
-function readInviteCode() {
+function normalizeInviteSignature(value) {
+  const signature = String(value || "").trim().toLowerCase();
+  return /^[0-9a-f]{64}$/.test(signature) ? signature : "";
+}
+
+function readInviteContext() {
   const fromUrl = normalizeInviteCode(new URLSearchParams(globalThis.location?.search || "").get("invite"));
-  if (fromUrl) {
-    globalThis.localStorage?.setItem(INVITE_STORAGE_KEY, JSON.stringify({ code: fromUrl, expiresAt: Date.now() + INVITE_RETENTION_MS }));
-    return fromUrl;
+  const signatureFromUrl = normalizeInviteSignature(new URLSearchParams(globalThis.location?.search || "").get("sig"));
+  if (fromUrl && signatureFromUrl) {
+    const invite = { code: fromUrl, signature: signatureFromUrl, expiresAt: Date.now() + INVITE_RETENTION_MS };
+    globalThis.localStorage?.setItem(INVITE_STORAGE_KEY, JSON.stringify(invite));
+    return invite;
   }
   try {
     const saved = JSON.parse(globalThis.localStorage?.getItem(INVITE_STORAGE_KEY) || "null");
-    if (saved?.expiresAt > Date.now()) return normalizeInviteCode(saved.code);
+    if (saved?.expiresAt > Date.now()) {
+      const code = normalizeInviteCode(saved.code);
+      const signature = normalizeInviteSignature(saved.signature);
+      if (code && signature) return { code, signature };
+    }
     globalThis.localStorage?.removeItem(INVITE_STORAGE_KEY);
   } catch {
     globalThis.localStorage?.removeItem(INVITE_STORAGE_KEY);
   }
-  return "";
+  return { code: "", signature: "" };
 }
 
 const navLinks = [
@@ -729,6 +741,7 @@ function BookingModal({ open, onClose }) {
     setMessage("");
     const controller = new AbortController();
     const timeout = window.setTimeout(() => controller.abort(), 12000);
+    const invite = readInviteContext();
 
     try {
       const response = await fetch(RESERVATION_ENDPOINT, {
@@ -738,7 +751,8 @@ function BookingModal({ open, onClose }) {
           name,
           phone,
           company: String(data.get("company") ?? ""),
-          inviteCode: readInviteCode(),
+          inviteCode: invite.code,
+          inviteSignature: invite.signature,
         }),
         signal: controller.signal,
       });
@@ -970,6 +984,60 @@ const crmStatuses = [
   ["intent", "意向跟进"], ["closed", "已成交／关闭"], ["invalid", "无效"],
 ];
 
+function loadImage(source) {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error("二维码图片生成失败。"));
+    image.src = source;
+  });
+}
+
+async function createInviteQrCard({ displayName, inviteUrl }) {
+  const qrDataUrl = await QRCode.toDataURL(inviteUrl, {
+    errorCorrectionLevel: "H",
+    margin: 3,
+    width: 720,
+    color: { dark: "#071d34", light: "#ffffff" },
+  });
+  const qrImage = await loadImage(qrDataUrl);
+  const canvas = document.createElement("canvas");
+  canvas.width = 1080;
+  canvas.height = 1440;
+  const context = canvas.getContext("2d");
+  context.fillStyle = "#f4f0e9";
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  context.fillStyle = "#071d34";
+  context.fillRect(0, 0, canvas.width, 300);
+  context.fillStyle = "#dec898";
+  context.fillRect(110, 198, 860, 2);
+  context.textAlign = "center";
+  context.fillStyle = "#ffffff";
+  context.font = '500 58px "Songti SC", serif';
+  context.fillText("卓能 · 河畔轩", 540, 115);
+  context.font = "24px Georgia, serif";
+  context.fillText("CHEUK NANG RIVERSIDE", 540, 158);
+  context.fillStyle = "#071d34";
+  context.font = '500 42px "Songti SC", serif';
+  context.fillText("官方专属邀约", 540, 385);
+  context.fillStyle = "#68737c";
+  context.font = "26px sans-serif";
+  context.fillText(`置业顾问：${displayName}`, 540, 432);
+  context.fillStyle = "#ffffff";
+  context.fillRect(150, 500, 780, 780);
+  context.drawImage(qrImage, 180, 530, 720, 720);
+  context.strokeStyle = "#b48b4e";
+  context.lineWidth = 2;
+  context.strokeRect(150, 500, 780, 780);
+  context.fillStyle = "#071d34";
+  context.font = '500 34px "Songti SC", serif';
+  context.fillText("扫码预约参观", 540, 1350);
+  context.fillStyle = "#68737c";
+  context.font = "20px sans-serif";
+  context.fillText("请认准卓能·河畔轩官方域名", 540, 1390);
+  return canvas.toDataURL("image/png");
+}
+
 function CrmAdmin() {
   const [status, setStatus] = useState("loading");
   const [password, setPassword] = useState("");
@@ -1054,7 +1122,7 @@ function CrmAdmin() {
     return <main className="admin-login-page"><section className="admin-login-card"><p>CHEUK NANG RIVERSIDE</p><h1>CRM 管理后台</h1><span>总管理员可以创建销售账号、查看公共客户池并调整客户归属。</span>{status === "loading" ? <div className="admin-loading">正在连接 CRM 数据库…</div> : <form onSubmit={login}><label><span>管理员密码</span><input type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" required autoFocus /></label>{message && <strong role="alert">{message}</strong>}<button type="submit" disabled={status === "submitting"}>{status === "submitting" ? "正在登录" : "进入 CRM"}</button></form>}</section></main>;
   }
 
-  return <main className="admin-page"><header className="admin-topbar"><Brand light /><button type="button" onClick={() => { fetch("/api/admin/logout", { method: "POST", credentials: "same-origin" }); setStatus("login"); }}>退出登录</button></header><section className="admin-shell"><div className="admin-heading"><div><p>CRM ADMIN</p><h1>销售与客户归属</h1><span>邀请码只记录客户来源；销售登录后只能查看自己名下客户。</span></div><div className="admin-actions"><button type="button" onClick={load}>刷新</button></div></div><section className="crm-panel"><h2>创建销售账号</h2><form className="crm-form" onSubmit={createSales}><input value={newSales.displayName} onChange={(event) => setNewSales({ ...newSales, displayName: event.target.value })} placeholder="销售姓名" required /><input value={newSales.loginName} onChange={(event) => setNewSales({ ...newSales, loginName: event.target.value })} placeholder="登录名，例如 sales-a" required /><input value={newSales.inviteCode} onChange={(event) => setNewSales({ ...newSales, inviteCode: event.target.value })} placeholder="邀请码（留空自动生成）" /><input type="password" value={newSales.password} onChange={(event) => setNewSales({ ...newSales, password: event.target.value })} placeholder="初始密码，至少 10 位" required /><button type="submit">创建账号</button></form>{message && <p className="crm-message" role="status">{message}</p>}<div className="admin-table-wrap"><table><thead><tr><th>销售</th><th>登录名</th><th>邀请码</th><th>邀请链接</th></tr></thead><tbody>{sales.map((person) => <tr key={person.id}><td>{person.display_name}</td><td>{person.login_name}</td><td>{person.invite_code}</td><td><code>/?invite={person.invite_code}</code></td></tr>)}</tbody></table></div></section><section className="crm-panel"><h2>客户归属与公共池</h2><div className="admin-table-wrap"><table><thead><tr><th>客户</th><th>手机号</th><th>状态</th><th>当前归属</th><th>分配／转交</th></tr></thead><tbody>{leads.map((lead) => <tr key={lead.id}><td>{lead.name}</td><td>{lead.phone}</td><td>{crmStatuses.find(([value]) => value === lead.status)?.[1] || lead.status}</td><td>{lead.sales_name || "公共客户池"}</td><td><div className="crm-assignment"><select value={assignments[lead.id]?.salesId || ""} onChange={(event) => setAssignments({ ...assignments, [lead.id]: { ...assignments[lead.id], salesId: event.target.value } })}><option value="">选择销售</option>{sales.filter((person) => person.active).map((person) => <option key={person.id} value={person.id}>{person.display_name}</option>)}</select><input value={assignments[lead.id]?.reason || ""} onChange={(event) => setAssignments({ ...assignments, [lead.id]: { ...assignments[lead.id], reason: event.target.value } })} placeholder="调整原因" /><button type="button" onClick={() => assignLead(lead.id)}>确认</button></div></td></tr>)}</tbody></table></div></section></section></main>;
+  return <main className="admin-page"><header className="admin-topbar"><Brand light /><button type="button" onClick={() => { fetch("/api/admin/logout", { method: "POST", credentials: "same-origin" }); setStatus("login"); }}>退出登录</button></header><section className="admin-shell"><div className="admin-heading"><div><p>CRM ADMIN</p><h1>销售与客户归属</h1><span>邀请码只记录客户来源；销售登录后只能查看自己名下客户。</span></div><div className="admin-actions"><button type="button" onClick={load}>刷新</button></div></div><section className="crm-panel"><h2>创建销售账号</h2><form className="crm-form" onSubmit={createSales}><input value={newSales.displayName} onChange={(event) => setNewSales({ ...newSales, displayName: event.target.value })} placeholder="销售姓名" required /><input value={newSales.loginName} onChange={(event) => setNewSales({ ...newSales, loginName: event.target.value })} placeholder="登录名，例如 sales-a" required /><input value={newSales.inviteCode} onChange={(event) => setNewSales({ ...newSales, inviteCode: event.target.value })} placeholder="邀请码（留空自动生成）" /><input type="password" value={newSales.password} onChange={(event) => setNewSales({ ...newSales, password: event.target.value })} placeholder="初始密码，至少 10 位" required /><button type="submit">创建账号</button></form>{message && <p className="crm-message" role="status">{message}</p>}<div className="admin-table-wrap"><table><thead><tr><th>销售</th><th>登录名</th><th>邀请码</th><th>官方邀请链接</th></tr></thead><tbody>{sales.map((person) => <tr key={person.id}><td>{person.display_name}</td><td>{person.login_name}</td><td>{person.invite_code}</td><td><code>{person.invite_url || "待配置邀请签名密钥"}</code></td></tr>)}</tbody></table></div></section><section className="crm-panel"><h2>客户归属与公共池</h2><div className="admin-table-wrap"><table><thead><tr><th>客户</th><th>手机号</th><th>状态</th><th>当前归属</th><th>分配／转交</th></tr></thead><tbody>{leads.map((lead) => <tr key={lead.id}><td>{lead.name}</td><td>{lead.phone}</td><td>{crmStatuses.find(([value]) => value === lead.status)?.[1] || lead.status}</td><td>{lead.sales_name || "公共客户池"}</td><td><div className="crm-assignment"><select value={assignments[lead.id]?.salesId || ""} onChange={(event) => setAssignments({ ...assignments, [lead.id]: { ...assignments[lead.id], salesId: event.target.value } })}><option value="">选择销售</option>{sales.filter((person) => person.active).map((person) => <option key={person.id} value={person.id}>{person.display_name}</option>)}</select><input value={assignments[lead.id]?.reason || ""} onChange={(event) => setAssignments({ ...assignments, [lead.id]: { ...assignments[lead.id], reason: event.target.value } })} placeholder="调整原因" /><button type="button" onClick={() => assignLead(lead.id)}>确认</button></div></td></tr>)}</tbody></table></div></section></section></main>;
 }
 
 function SalesCrm() {
@@ -1065,6 +1133,8 @@ function SalesCrm() {
   const [sales, setSales] = useState(null);
   const [leads, setLeads] = useState([]);
   const [drafts, setDrafts] = useState({});
+  const [qrCardUrl, setQrCardUrl] = useState("");
+  const [qrMessage, setQrMessage] = useState("");
 
   const load = useCallback(async () => {
     setStatus("loading");
@@ -1083,6 +1153,16 @@ function SalesCrm() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!sales?.inviteUrl) { setQrCardUrl(""); return undefined; }
+    setQrMessage("正在生成专属二维码…");
+    createInviteQrCard({ displayName: sales.displayName, inviteUrl: sales.inviteUrl })
+      .then((url) => { if (!cancelled) { setQrCardUrl(url); setQrMessage(""); } })
+      .catch((error) => { if (!cancelled) setQrMessage(error.message); });
+    return () => { cancelled = true; };
+  }, [sales]);
 
   const login = async (event) => {
     event.preventDefault();
@@ -1110,11 +1190,21 @@ function SalesCrm() {
     } catch (error) { setMessage(error.message); }
   };
 
+  const downloadQrCard = () => {
+    if (!qrCardUrl || !sales) return;
+    const link = document.createElement("a");
+    link.href = qrCardUrl;
+    link.download = `卓能河畔轩-${sales.displayName}-专属邀约二维码.png`;
+    document.body.append(link);
+    link.click();
+    link.remove();
+  };
+
   if (["loading", "login", "submitting", "error"].includes(status)) {
     return <main className="admin-login-page"><section className="admin-login-card"><p>CHEUK NANG RIVERSIDE</p><h1>销售客户后台</h1><span>仅展示分配给当前账号的客户；邀请码不能用于登录。</span>{status === "loading" ? <div className="admin-loading">正在连接 CRM 数据库…</div> : <form onSubmit={login}><label><span>登录名</span><input value={loginName} onChange={(event) => setLoginName(event.target.value)} autoComplete="username" required /></label><label><span>密码</span><input type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" required /></label>{message && <strong role="alert">{message}</strong>}<button type="submit" disabled={status === "submitting"}>{status === "submitting" ? "正在登录" : "进入客户后台"}</button></form>}</section></main>;
   }
 
-  return <main className="admin-page"><header className="admin-topbar"><Brand light /><button type="button" onClick={() => { fetch(`${CRM_ENDPOINT}/logout`, { method: "POST", credentials: "same-origin" }); setStatus("login"); }}>退出登录</button></header><section className="admin-shell"><div className="admin-heading"><div><p>SALES CRM</p><h1>{sales?.displayName}的客户</h1><span>专属邀请链接：/?invite={sales?.inviteCode}</span></div><div className="admin-actions"><button type="button" onClick={load}>刷新</button></div></div>{message && <p className="crm-message" role="status">{message}</p>}<section className="crm-panel"><div className="admin-table-wrap"><table><thead><tr><th>客户</th><th>手机号</th><th>当前状态</th><th>跟进状态</th><th>跟进备注</th><th>操作</th></tr></thead><tbody>{leads.map((lead) => { const draft = drafts[lead.id] || { status: lead.status, note: "" }; return <tr key={lead.id}><td>{lead.name}</td><td><a href={`tel:${lead.phone}`}>{lead.phone}</a></td><td>{crmStatuses.find(([value]) => value === lead.status)?.[1] || lead.status}</td><td><select value={draft.status} onChange={(event) => setDrafts({ ...drafts, [lead.id]: { ...draft, status: event.target.value } })}>{crmStatuses.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></td><td><input value={draft.note} onChange={(event) => setDrafts({ ...drafts, [lead.id]: { ...draft, note: event.target.value } })} placeholder="本次跟进内容" /></td><td><button type="button" onClick={() => saveFollowup(lead)}>保存</button></td></tr>; })}</tbody></table></div></section></section></main>;
+  return <main className="admin-page"><header className="admin-topbar"><Brand light /><button type="button" onClick={() => { fetch(`${CRM_ENDPOINT}/logout`, { method: "POST", credentials: "same-origin" }); setStatus("login"); }}>退出登录</button></header><section className="admin-shell"><div className="admin-heading"><div><p>SALES CRM</p><h1>{sales?.displayName}的客户</h1><span>邀请码只用于识别来源，不可作为后台登录凭证。</span></div><div className="admin-actions"><button type="button" onClick={load}>刷新</button></div></div><section className="crm-panel crm-qr-panel"><div><h2>我的官方专属二维码</h2><p>请将此二维码或官方专属链接分享给客户。客户扫码后提交资料，系统才会自动归属到你名下。</p>{sales?.inviteUrl ? <code>{sales.inviteUrl}</code> : <strong>邀请签名尚未配置，暂不能生成可用二维码。</strong>}<div className="admin-actions"><button type="button" onClick={downloadQrCard} disabled={!qrCardUrl}>下载专属二维码</button></div>{qrMessage && <p className="crm-message" role="status">{qrMessage}</p>}</div>{qrCardUrl && <img src={qrCardUrl} alt={`${sales.displayName}的卓能河畔轩官方专属二维码`} />}</section>{message && <p className="crm-message" role="status">{message}</p>}<section className="crm-panel"><div className="admin-table-wrap"><table><thead><tr><th>客户</th><th>手机号</th><th>当前状态</th><th>跟进状态</th><th>跟进备注</th><th>操作</th></tr></thead><tbody>{leads.map((lead) => { const draft = drafts[lead.id] || { status: lead.status, note: "" }; return <tr key={lead.id}><td>{lead.name}</td><td><a href={`tel:${lead.phone}`}>{lead.phone}</a></td><td>{crmStatuses.find(([value]) => value === lead.status)?.[1] || lead.status}</td><td><select value={draft.status} onChange={(event) => setDrafts({ ...drafts, [lead.id]: { ...draft, status: event.target.value } })}>{crmStatuses.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></td><td><input value={draft.note} onChange={(event) => setDrafts({ ...drafts, [lead.id]: { ...draft, note: event.target.value } })} placeholder="本次跟进内容" /></td><td><button type="button" onClick={() => saveFollowup(lead)}>保存</button></td></tr>; })}</tbody></table></div></section></section></main>;
 }
 
 function Footer() {

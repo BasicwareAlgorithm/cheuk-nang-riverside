@@ -199,6 +199,7 @@ export async function handleReservation(request, env) {
   const name = String(body.name ?? "").trim();
   const phone = normalizePhone(String(body.phone ?? "").trim());
   const inviteCode = String(body.inviteCode ?? "");
+  const inviteSignature = String(body.inviteSignature ?? "");
   if (name.length < 2 || name.length > 30 || /[\u0000-\u001f\u007f]/.test(name)) {
     return reservationJson(request, { ok: false, message: "请输入2至30个字符的姓名。" }, 400);
   }
@@ -214,7 +215,7 @@ export async function handleReservation(request, env) {
     const result = await env.DB.prepare("INSERT INTO reservations (name, phone) VALUES (?, ?)").bind(name, phone).run();
     if (!result.success) throw new Error("D1 insert did not succeed");
     try {
-      await recordCrmReservation(env, { name, phone, inviteCode, reservationId: result.meta?.last_row_id });
+      await recordCrmReservation(env, { name, phone, inviteCode, inviteSignature, reservationId: result.meta?.last_row_id });
     } catch (error) {
       // The legacy appointment record must remain available while CRM migration is pending or being repaired.
       console.error("CRM reservation capture failed", { requestId, reason: error.message });

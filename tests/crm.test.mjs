@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
-import { handleCrmApi, recordCrmReservation } from "../worker/crm.js";
+import { createInviteSignature, handleCrmApi, recordCrmReservation } from "../worker/crm.js";
 
 function createCrmD1(sales) {
   const customers = [];
@@ -60,17 +60,20 @@ test("CRM captures a valid invite and does not let a later invite steal the cust
     { id: 1, invite_code: "ALPHA2026", active: 1 },
     { id: 2, invite_code: "BRAVO2026", active: 1 },
   ]);
+  const CRM_INVITE_SECRET = "crm-invite-test-secret";
 
-  const first = await recordCrmReservation({ DB }, {
+  const first = await recordCrmReservation({ DB, CRM_INVITE_SECRET }, {
     name: "李女士",
     phone: "13800138000",
     inviteCode: "alpha-2026",
+    inviteSignature: await createInviteSignature("alpha-2026", CRM_INVITE_SECRET),
     reservationId: 101,
   });
-  const second = await recordCrmReservation({ DB }, {
+  const second = await recordCrmReservation({ DB, CRM_INVITE_SECRET }, {
     name: "李女士",
     phone: "13800138000",
     inviteCode: "bravo-2026",
+    inviteSignature: await createInviteSignature("bravo-2026", CRM_INVITE_SECRET),
     reservationId: 102,
   });
 
@@ -84,12 +87,13 @@ test("CRM captures a valid invite and does not let a later invite steal the cust
   ]);
 });
 
-test("CRM sends unknown or absent invite codes to the public pool", async () => {
+test("CRM sends unsigned, unknown or absent invite codes to the public pool", async () => {
   const DB = createCrmD1([{ id: 1, invite_code: "ALPHA2026", active: 1 }]);
-  const result = await recordCrmReservation({ DB }, {
+  const result = await recordCrmReservation({ DB, CRM_INVITE_SECRET: "crm-invite-test-secret" }, {
     name: "王先生",
     phone: "13900139000",
-    inviteCode: "unknown-code",
+    inviteCode: "ALPHA2026",
+    inviteSignature: "not-a-valid-signature",
     reservationId: 103,
   });
 
@@ -152,7 +156,7 @@ function createCrmApiD1() {
 
 test("sales API only returns the signed-in sales person's own customers", async () => {
   const DB = createCrmApiD1();
-  const env = { DB, CRM_SESSION_SECRET: "crm-test-session-secret" };
+  const env = { DB, CRM_SESSION_SECRET: "crm-test-session-secret", CRM_INVITE_SECRET: "crm-invite-test-secret" };
   const isAdmin = async () => true;
 
   for (const [displayName, loginName, inviteCode] of [["销售 A", "sales-a", "ALPHA2026"], ["销售 B", "sales-b", "BRAVO2026"]]) {
@@ -162,6 +166,9 @@ test("sales API only returns the signed-in sales person's own customers", async 
       body: JSON.stringify({ displayName, loginName, inviteCode, password: "a-long-test-password" }),
     }), env, isAdmin);
     assert.equal(response.status, 201);
+    const result = await response.json();
+    assert.match(result.sales.inviteUrl, /^https:\/\/example\.test\/\?invite=/);
+    assert.match(result.sales.inviteUrl, /&sig=[0-9a-f]{64}$/);
   }
 
   const login = await handleCrmApi(new Request("https://example.test/api/crm/login", {
