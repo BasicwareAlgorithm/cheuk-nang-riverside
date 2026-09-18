@@ -271,5 +271,6 @@ test("emits the files required by Sites packaging", async () => {
 test("does not recreate retired Worker routes", async () => {
   const config = JSON.parse(await readFile(new URL("../wrangler.jsonc", import.meta.url), "utf8"));
   assert.equal(config.routes, undefined);
+  assert.equal(config.workers_dev, true);
   assert.equal(config.assets.not_found_handling, "404-page");
 });

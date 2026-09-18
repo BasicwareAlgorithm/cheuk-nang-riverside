@@ -3,6 +3,7 @@
   "name": "cheuk-nang-riverside",
   "compatibility_date": "2026-08-10",
   "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
   "main": "dist/server/index.js",
   "assets": {
     "directory": "./dist/client",

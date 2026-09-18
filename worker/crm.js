@@ -103,7 +103,8 @@ async function createSalesSession(salesId, env) {
 
 async function salesSession(request, env) {
   if (!env.CRM_SESSION_SECRET) return null;
-  const value = getCookie(request, CRM_SALES_COOKIE);
+  const authorization = request.headers.get("authorization") || "";
+  const value = authorization.startsWith("Bearer ") ? authorization.slice(7) : getCookie(request, CRM_SALES_COOKIE);
   const [id, expiresAt, signature] = value.split(".");
   if (!/^\d+$/.test(id) || !/^\d+$/.test(expiresAt) || !/^[0-9a-f]{64}$/i.test(signature)) return null;
   if (Number(expiresAt) <= Math.floor(Date.now() / 1000)) return null;
@@ -260,7 +261,7 @@ export async function handleCrmApi(request, env, isAdmin) {
     const sales = await env.DB.prepare("SELECT id, display_name, login_name, invite_code, password_hash, active FROM crm_sales_accounts WHERE login_name = ?").bind(loginName).first();
     if (!sales?.active || !(await verifyPassword(password, sales.password_hash))) return json({ ok: false, message: "登录名或密码不正确。" }, 401);
     const session = await createSalesSession(sales.id, env);
-    return json({ ok: true, sales: { id: sales.id, displayName: sales.display_name, inviteCode: sales.invite_code, inviteUrl: await salesInviteUrl(request, sales.invite_code, env) } }, 200, {
+    return json({ ok: true, token: session, sales: { id: sales.id, displayName: sales.display_name, inviteCode: sales.invite_code, inviteUrl: await salesInviteUrl(request, sales.invite_code, env) } }, 200, {
       "set-cookie": `${CRM_SALES_COOKIE}=${session}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=${CRM_SESSION_MAX_AGE_SECONDS}`,
     });
   }

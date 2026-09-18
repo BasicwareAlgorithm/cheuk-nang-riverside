@@ -11,6 +11,12 @@ const RESERVATION_ORIGINS = new Set([
   "http://127.0.0.1:5173",
   "http://localhost:5173",
 ]);
+const CRM_ORIGINS = new Set([
+  "https://cheuknangriverside.com",
+  "https://www.cheuknangriverside.com",
+  "http://127.0.0.1:5173",
+  "http://localhost:5173",
+]);
 
 function json(body, status = 200, extraHeaders = {}) {
   return new Response(JSON.stringify(body), {
@@ -114,9 +120,29 @@ async function adminSignature(password) {
 
 async function isAdmin(request, env) {
   if (!env.ADMIN_PASSWORD) return false;
+  const suppliedPassword = request.headers.get("x-admin-password");
+  if (suppliedPassword) return constantTimeEqual(await adminSignature(suppliedPassword), await adminSignature(env.ADMIN_PASSWORD));
   const cookie = getCookie(request, ADMIN_COOKIE);
   if (!cookie) return false;
   return constantTimeEqual(cookie, await adminSignature(env.ADMIN_PASSWORD));
+}
+
+function crmCorsHeaders(request) {
+  const origin = request.headers.get("origin");
+  if (!origin || !CRM_ORIGINS.has(origin)) return {};
+  return {
+    "access-control-allow-headers": "authorization, content-type, x-admin-password",
+    "access-control-allow-methods": "GET, POST, PATCH, OPTIONS",
+    "access-control-allow-origin": origin,
+    "access-control-max-age": "86400",
+    vary: "Origin",
+  };
+}
+
+function withHeaders(response, extraHeaders) {
+  const headers = new Headers(response.headers);
+  for (const [key, value] of Object.entries(extraHeaders)) headers.set(key, value);
+  return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
 }
 
 function pageShell(title, content) {
@@ -313,7 +339,14 @@ export async function handleAdmin(request, env) {
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
-    if (url.pathname.startsWith("/api/crm")) return handleCrmApi(request, env, isAdmin);
+    if (url.pathname.startsWith("/api/crm")) {
+      const corsHeaders = crmCorsHeaders(request);
+      if (request.method === "OPTIONS") {
+        return corsHeaders["access-control-allow-origin"] ? new Response(null, { status: 204, headers: corsHeaders }) : json({ ok: false, message: "请求来源无效。" }, 403);
+      }
+      if (request.headers.get("origin") && !corsHeaders["access-control-allow-origin"]) return json({ ok: false, message: "请求来源无效。" }, 403);
+      return withHeaders(await handleCrmApi(request, env, isAdmin), corsHeaders);
+    }
     if (url.pathname.startsWith(ADMIN_API_PREFIX)) return handleAdminApi(request, env);
     if (url.pathname === RESERVATION_PATH) return handleReservation(request, env);
     if (url.pathname.startsWith("/admin") || (url.hostname === "records.cheuknangriverside.com" && url.pathname === "/")) {
