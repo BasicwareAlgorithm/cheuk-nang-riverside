@@ -1,4 +1,5 @@
 .DS_Store
+.env.crm.local
 AGENTS.md
 design-qa.md
 node_modules/

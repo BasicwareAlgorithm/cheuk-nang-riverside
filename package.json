@@ -24,6 +24,7 @@
   },
   "devDependencies": {
     "cheerio": "^1.2.0",
-    "opencc-js": "^1.4.1"
+    "opencc-js": "^1.4.1",
+    "wrangler": "^4.134.0"
   }
 }
