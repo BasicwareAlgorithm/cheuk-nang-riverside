@@ -21,11 +21,12 @@ const MATERIAL = "/assets/ppt";
 const PHASE2 = "/assets/phase2";
 const PROJECT_FILM_URL = `https://media.cheuknangriverside.com${MATERIAL}/project-film.mp4`;
 const DEPLOY_BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
-const RESERVATION_ENDPOINT = "/api/reservations";
+const CRM_WORKER_ORIGIN = "https://cheuk-nang-riverside.hezhenzhen.workers.dev";
+const RESERVATION_ENDPOINT = import.meta.env.DEV ? "/api/reservations" : `${CRM_WORKER_ORIGIN}/api/reservations`;
 const ADMIN_ENDPOINT = "/api/admin/reservations";
 const CRM_ENDPOINT = import.meta.env.VITE_CRM_API_ORIGIN
   ? `${import.meta.env.VITE_CRM_API_ORIGIN.replace(/\/$/, "")}/api/crm`
-  : import.meta.env.DEV ? "/api/crm" : "https://cheuk-nang-riverside.hezhenzhen.workers.dev/api/crm";
+  : import.meta.env.DEV ? "/api/crm" : `${CRM_WORKER_ORIGIN}/api/crm`;
 const PHONE_PATTERN = /^(?:\+?86[- ]?)?1[3-9]\d{9}$/;
 const INVITE_STORAGE_KEY = "cnr-invite-code";
 const INVITE_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
@@ -1200,6 +1201,14 @@ function SalesCrm() {
   return <main className="admin-page"><header className="admin-topbar"><Brand light /><button type="button" onClick={() => { setSalesToken(""); setStatus("login"); }}>退出登录</button></header><section className="admin-shell"><div className="admin-heading"><div><p>SALES CRM</p><h1>{sales?.displayName}的客户</h1><span>邀请码只用于识别来源，不可作为后台登录凭证。</span></div><div className="admin-actions"><button type="button" onClick={() => load(salesToken)}>刷新</button></div></div><section className="crm-panel crm-qr-panel"><div><h2>我的官方专属二维码</h2><p>请将此二维码或官方专属链接分享给客户。客户扫码后提交资料，系统才会自动归属到你名下。</p>{sales?.inviteUrl ? <code>{sales.inviteUrl}</code> : <strong>邀请签名尚未配置，暂不能生成可用二维码。</strong>}<div className="admin-actions"><button type="button" onClick={downloadQrCard} disabled={!qrCardUrl}>下载专属二维码</button></div>{qrMessage && <p className="crm-message" role="status">{qrMessage}</p>}</div>{qrCardUrl && <img src={qrCardUrl} alt={`${sales.displayName}的卓能河畔轩官方专属二维码`} />}</section>{message && <p className="crm-message" role="status">{message}</p>}<section className="crm-panel"><div className="admin-table-wrap"><table><thead><tr><th>客户</th><th>手机号</th><th>当前状态</th><th>跟进状态</th><th>跟进备注</th><th>操作</th></tr></thead><tbody>{leads.map((lead) => { const draft = drafts[lead.id] || { status: lead.status, note: "" }; return <tr key={lead.id}><td>{lead.name}</td><td><a href={`tel:${lead.phone}`}>{lead.phone}</a></td><td>{crmStatuses.find(([value]) => value === lead.status)?.[1] || lead.status}</td><td><select value={draft.status} onChange={(event) => setDrafts({ ...drafts, [lead.id]: { ...draft, status: event.target.value } })}>{crmStatuses.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></td><td><input value={draft.note} onChange={(event) => setDrafts({ ...drafts, [lead.id]: { ...draft, note: event.target.value } })} placeholder="本次跟进内容" /></td><td><button type="button" onClick={() => saveFollowup(lead)}>保存</button></td></tr>; })}</tbody></table></div></section></section></main>;
 }
 
+function CrmHostRedirect() {
+  useEffect(() => {
+    const target = `${CRM_WORKER_ORIGIN}/${globalThis.location?.hash || "#/crm/admin"}`;
+    if (globalThis.location?.origin !== CRM_WORKER_ORIGIN) globalThis.location.replace(target);
+  }, []);
+  return <main className="admin-login-page"><section className="admin-login-card"><p>CHEUK NANG RIVERSIDE</p><h1>正在进入 CRM</h1><span>为保护登录与客户数据，CRM 正在切换到官方安全后台入口。</span></section></main>;
+}
+
 function Footer() {
   return (
     <footer><div className="shell footer-inner"><Brand light /><span>CHEUK NANG RIVERSIDE © 2026</span></div></footer>
@@ -1287,6 +1296,8 @@ function SiteApp() {
 }
 
 export function App() {
+  const isCrmRoute = globalThis.location?.hash.startsWith("#/crm/");
+  if (RESERVATIONS_ENABLED && isCrmRoute && !import.meta.env.DEV && globalThis.location?.origin !== CRM_WORKER_ORIGIN) return <CrmHostRedirect />;
   if (RESERVATIONS_ENABLED && globalThis.location?.hash.startsWith("#/crm/admin")) return <CrmAdmin />;
   if (RESERVATIONS_ENABLED && globalThis.location?.hash.startsWith("#/crm/sales")) return <SalesCrm />;
   if (RESERVATIONS_ENABLED && (

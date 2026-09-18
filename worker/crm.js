@@ -1,6 +1,7 @@
 const CRM_SALES_COOKIE = "crm_sales";
 const CRM_SESSION_MAX_AGE_SECONDS = 60 * 60 * 12;
 const OWNERSHIP_LOCK_DAYS = 90;
+const PUBLIC_SITE_ORIGIN = "https://cheuknangriverside.com";
 const CRM_STATUSES = new Set(["new", "contacted", "appointment", "visited", "intent", "closed", "invalid"]);
 const textEncoder = new TextEncoder();
 
@@ -85,7 +86,7 @@ async function isValidInviteSignature(inviteCode, signature, env) {
 
 async function salesInviteUrl(request, inviteCode, env) {
   if (!env.CRM_INVITE_SECRET) return null;
-  const url = new URL(request.url);
+  const url = new URL(env.PUBLIC_SITE_ORIGIN || PUBLIC_SITE_ORIGIN);
   url.pathname = "/";
   url.search = "";
   url.hash = "";

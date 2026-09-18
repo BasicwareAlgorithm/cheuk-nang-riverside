@@ -167,7 +167,7 @@ test("sales API only returns the signed-in sales person's own customers", async 
     }), env, isAdmin);
     assert.equal(response.status, 201);
     const result = await response.json();
-    assert.match(result.sales.inviteUrl, /^https:\/\/example\.test\/\?invite=/);
+    assert.match(result.sales.inviteUrl, /^https:\/\/cheuknangriverside\.com\/\?invite=/);
     assert.match(result.sales.inviteUrl, /&sig=[0-9a-f]{64}$/);
   }
 
