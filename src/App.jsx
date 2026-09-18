@@ -22,7 +22,10 @@ const PROJECT_FILM_URL = `https://media.cheuknangriverside.com${MATERIAL}/projec
 const DEPLOY_BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 const RESERVATION_ENDPOINT = "/api/reservations";
 const ADMIN_ENDPOINT = "/api/admin/reservations";
+const CRM_ENDPOINT = "/api/crm";
 const PHONE_PATTERN = /^(?:\+?86[- ]?)?1[3-9]\d{9}$/;
+const INVITE_STORAGE_KEY = "cnr-invite-code";
+const INVITE_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
 const IS_TEST_RESERVATION_ENVIRONMENT = import.meta.env.DEV
   || globalThis.location?.hostname.endsWith(".chatgpt.site")
   || import.meta.env.VITE_RESERVATIONS_ENABLED === "false";
@@ -30,6 +33,26 @@ const RESERVATIONS_ENABLED = !IS_TEST_RESERVATION_ENVIRONMENT;
 
 function asset(path) {
   return globalThis.__OFFLINE_ASSETS__?.[path] ?? `${DEPLOY_BASE}${path}`;
+}
+
+function normalizeInviteCode(value) {
+  return String(value || "").trim().toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 32);
+}
+
+function readInviteCode() {
+  const fromUrl = normalizeInviteCode(new URLSearchParams(globalThis.location?.search || "").get("invite"));
+  if (fromUrl) {
+    globalThis.localStorage?.setItem(INVITE_STORAGE_KEY, JSON.stringify({ code: fromUrl, expiresAt: Date.now() + INVITE_RETENTION_MS }));
+    return fromUrl;
+  }
+  try {
+    const saved = JSON.parse(globalThis.localStorage?.getItem(INVITE_STORAGE_KEY) || "null");
+    if (saved?.expiresAt > Date.now()) return normalizeInviteCode(saved.code);
+    globalThis.localStorage?.removeItem(INVITE_STORAGE_KEY);
+  } catch {
+    globalThis.localStorage?.removeItem(INVITE_STORAGE_KEY);
+  }
+  return "";
 }
 
 const navLinks = [
@@ -715,6 +738,7 @@ function BookingModal({ open, onClose }) {
           name,
           phone,
           company: String(data.get("company") ?? ""),
+          inviteCode: readInviteCode(),
         }),
         signal: controller.signal,
       });
@@ -941,6 +965,158 @@ function ReservationAdmin() {
   );
 }
 
+const crmStatuses = [
+  ["new", "新登记"], ["contacted", "已联系"], ["appointment", "已预约"], ["visited", "已到访"],
+  ["intent", "意向跟进"], ["closed", "已成交／关闭"], ["invalid", "无效"],
+];
+
+function CrmAdmin() {
+  const [status, setStatus] = useState("loading");
+  const [password, setPassword] = useState("");
+  const [message, setMessage] = useState("");
+  const [sales, setSales] = useState([]);
+  const [leads, setLeads] = useState([]);
+  const [newSales, setNewSales] = useState({ displayName: "", loginName: "", inviteCode: "", password: "" });
+  const [assignments, setAssignments] = useState({});
+
+  const load = useCallback(async () => {
+    setStatus("loading");
+    setMessage("");
+    try {
+      const [salesResponse, leadsResponse] = await Promise.all([
+        fetch(`${CRM_ENDPOINT}/admin/sales`, { credentials: "same-origin" }),
+        fetch(`${CRM_ENDPOINT}/admin/leads`, { credentials: "same-origin" }),
+      ]);
+      if (salesResponse.status === 401 || leadsResponse.status === 401) {
+        setStatus("login");
+        return;
+      }
+      const salesData = await salesResponse.json().catch(() => ({}));
+      const leadsData = await leadsResponse.json().catch(() => ({}));
+      if (!salesResponse.ok) throw new Error(salesData.message || "CRM 销售账号加载失败。");
+      if (!leadsResponse.ok) throw new Error(leadsData.message || "CRM 客户列表加载失败。");
+      setSales(salesData.sales || []);
+      setLeads(leadsData.leads || []);
+      setStatus("ready");
+    } catch (error) {
+      setStatus("error");
+      setMessage(error.message);
+    }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const login = async (event) => {
+    event.preventDefault();
+    setStatus("submitting");
+    setMessage("");
+    try {
+      const response = await fetch("/api/admin/login", { method: "POST", credentials: "same-origin", headers: { "content-type": "application/json" }, body: JSON.stringify({ password }) });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.message || "登录失败。");
+      setPassword("");
+      await load();
+    } catch (error) {
+      setStatus("login");
+      setMessage(error.message);
+    }
+  };
+
+  const createSales = async (event) => {
+    event.preventDefault();
+    setMessage("");
+    try {
+      const response = await fetch(`${CRM_ENDPOINT}/admin/sales`, { method: "POST", credentials: "same-origin", headers: { "content-type": "application/json" }, body: JSON.stringify(newSales) });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.message || "销售账号创建失败。");
+      setNewSales({ displayName: "", loginName: "", inviteCode: "", password: "" });
+      setMessage(`已创建 ${result.sales.displayName}，邀请码：${result.sales.inviteCode}`);
+      await load();
+    } catch (error) {
+      setMessage(error.message);
+    }
+  };
+
+  const assignLead = async (leadId) => {
+    const draft = assignments[leadId] || {};
+    setMessage("");
+    try {
+      const response = await fetch(`${CRM_ENDPOINT}/admin/leads/${leadId}/assign`, { method: "POST", credentials: "same-origin", headers: { "content-type": "application/json" }, body: JSON.stringify({ salesId: Number(draft.salesId), reason: draft.reason || "管理员分配" }) });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.message || "客户分配失败。");
+      await load();
+    } catch (error) {
+      setMessage(error.message);
+    }
+  };
+
+  if (["loading", "login", "submitting", "error"].includes(status)) {
+    return <main className="admin-login-page"><section className="admin-login-card"><p>CHEUK NANG RIVERSIDE</p><h1>CRM 管理后台</h1><span>总管理员可以创建销售账号、查看公共客户池并调整客户归属。</span>{status === "loading" ? <div className="admin-loading">正在连接 CRM 数据库…</div> : <form onSubmit={login}><label><span>管理员密码</span><input type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" required autoFocus /></label>{message && <strong role="alert">{message}</strong>}<button type="submit" disabled={status === "submitting"}>{status === "submitting" ? "正在登录" : "进入 CRM"}</button></form>}</section></main>;
+  }
+
+  return <main className="admin-page"><header className="admin-topbar"><Brand light /><button type="button" onClick={() => { fetch("/api/admin/logout", { method: "POST", credentials: "same-origin" }); setStatus("login"); }}>退出登录</button></header><section className="admin-shell"><div className="admin-heading"><div><p>CRM ADMIN</p><h1>销售与客户归属</h1><span>邀请码只记录客户来源；销售登录后只能查看自己名下客户。</span></div><div className="admin-actions"><button type="button" onClick={load}>刷新</button></div></div><section className="crm-panel"><h2>创建销售账号</h2><form className="crm-form" onSubmit={createSales}><input value={newSales.displayName} onChange={(event) => setNewSales({ ...newSales, displayName: event.target.value })} placeholder="销售姓名" required /><input value={newSales.loginName} onChange={(event) => setNewSales({ ...newSales, loginName: event.target.value })} placeholder="登录名，例如 sales-a" required /><input value={newSales.inviteCode} onChange={(event) => setNewSales({ ...newSales, inviteCode: event.target.value })} placeholder="邀请码（留空自动生成）" /><input type="password" value={newSales.password} onChange={(event) => setNewSales({ ...newSales, password: event.target.value })} placeholder="初始密码，至少 10 位" required /><button type="submit">创建账号</button></form>{message && <p className="crm-message" role="status">{message}</p>}<div className="admin-table-wrap"><table><thead><tr><th>销售</th><th>登录名</th><th>邀请码</th><th>邀请链接</th></tr></thead><tbody>{sales.map((person) => <tr key={person.id}><td>{person.display_name}</td><td>{person.login_name}</td><td>{person.invite_code}</td><td><code>/?invite={person.invite_code}</code></td></tr>)}</tbody></table></div></section><section className="crm-panel"><h2>客户归属与公共池</h2><div className="admin-table-wrap"><table><thead><tr><th>客户</th><th>手机号</th><th>状态</th><th>当前归属</th><th>分配／转交</th></tr></thead><tbody>{leads.map((lead) => <tr key={lead.id}><td>{lead.name}</td><td>{lead.phone}</td><td>{crmStatuses.find(([value]) => value === lead.status)?.[1] || lead.status}</td><td>{lead.sales_name || "公共客户池"}</td><td><div className="crm-assignment"><select value={assignments[lead.id]?.salesId || ""} onChange={(event) => setAssignments({ ...assignments, [lead.id]: { ...assignments[lead.id], salesId: event.target.value } })}><option value="">选择销售</option>{sales.filter((person) => person.active).map((person) => <option key={person.id} value={person.id}>{person.display_name}</option>)}</select><input value={assignments[lead.id]?.reason || ""} onChange={(event) => setAssignments({ ...assignments, [lead.id]: { ...assignments[lead.id], reason: event.target.value } })} placeholder="调整原因" /><button type="button" onClick={() => assignLead(lead.id)}>确认</button></div></td></tr>)}</tbody></table></div></section></section></main>;
+}
+
+function SalesCrm() {
+  const [status, setStatus] = useState("loading");
+  const [loginName, setLoginName] = useState("");
+  const [password, setPassword] = useState("");
+  const [message, setMessage] = useState("");
+  const [sales, setSales] = useState(null);
+  const [leads, setLeads] = useState([]);
+  const [drafts, setDrafts] = useState({});
+
+  const load = useCallback(async () => {
+    setStatus("loading");
+    setMessage("");
+    try {
+      const [meResponse, leadsResponse] = await Promise.all([fetch(`${CRM_ENDPOINT}/me`, { credentials: "same-origin" }), fetch(`${CRM_ENDPOINT}/leads`, { credentials: "same-origin" })]);
+      if (meResponse.status === 401 || leadsResponse.status === 401) { setStatus("login"); return; }
+      const me = await meResponse.json().catch(() => ({}));
+      const data = await leadsResponse.json().catch(() => ({}));
+      if (!meResponse.ok) throw new Error(me.message || "销售账号加载失败。");
+      if (!leadsResponse.ok) throw new Error(data.message || "客户列表加载失败。");
+      setSales(me.sales);
+      setLeads(data.leads || []);
+      setStatus("ready");
+    } catch (error) { setStatus("error"); setMessage(error.message); }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const login = async (event) => {
+    event.preventDefault();
+    setStatus("submitting");
+    setMessage("");
+    try {
+      const response = await fetch(`${CRM_ENDPOINT}/login`, { method: "POST", credentials: "same-origin", headers: { "content-type": "application/json" }, body: JSON.stringify({ loginName, password }) });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.message || "登录失败。");
+      setPassword("");
+      await load();
+    } catch (error) { setStatus("login"); setMessage(error.message); }
+  };
+
+  const saveFollowup = async (lead) => {
+    const draft = drafts[lead.id] || { status: lead.status, note: "" };
+    setMessage("");
+    try {
+      const response = await fetch(`${CRM_ENDPOINT}/leads/${lead.id}`, { method: "PATCH", credentials: "same-origin", headers: { "content-type": "application/json" }, body: JSON.stringify(draft) });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.message || "跟进保存失败。");
+      setDrafts({ ...drafts, [lead.id]: { status: draft.status, note: "" } });
+      setMessage("跟进已保存。");
+      await load();
+    } catch (error) { setMessage(error.message); }
+  };
+
+  if (["loading", "login", "submitting", "error"].includes(status)) {
+    return <main className="admin-login-page"><section className="admin-login-card"><p>CHEUK NANG RIVERSIDE</p><h1>销售客户后台</h1><span>仅展示分配给当前账号的客户；邀请码不能用于登录。</span>{status === "loading" ? <div className="admin-loading">正在连接 CRM 数据库…</div> : <form onSubmit={login}><label><span>登录名</span><input value={loginName} onChange={(event) => setLoginName(event.target.value)} autoComplete="username" required /></label><label><span>密码</span><input type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" required /></label>{message && <strong role="alert">{message}</strong>}<button type="submit" disabled={status === "submitting"}>{status === "submitting" ? "正在登录" : "进入客户后台"}</button></form>}</section></main>;
+  }
+
+  return <main className="admin-page"><header className="admin-topbar"><Brand light /><button type="button" onClick={() => { fetch(`${CRM_ENDPOINT}/logout`, { method: "POST", credentials: "same-origin" }); setStatus("login"); }}>退出登录</button></header><section className="admin-shell"><div className="admin-heading"><div><p>SALES CRM</p><h1>{sales?.displayName}的客户</h1><span>专属邀请链接：/?invite={sales?.inviteCode}</span></div><div className="admin-actions"><button type="button" onClick={load}>刷新</button></div></div>{message && <p className="crm-message" role="status">{message}</p>}<section className="crm-panel"><div className="admin-table-wrap"><table><thead><tr><th>客户</th><th>手机号</th><th>当前状态</th><th>跟进状态</th><th>跟进备注</th><th>操作</th></tr></thead><tbody>{leads.map((lead) => { const draft = drafts[lead.id] || { status: lead.status, note: "" }; return <tr key={lead.id}><td>{lead.name}</td><td><a href={`tel:${lead.phone}`}>{lead.phone}</a></td><td>{crmStatuses.find(([value]) => value === lead.status)?.[1] || lead.status}</td><td><select value={draft.status} onChange={(event) => setDrafts({ ...drafts, [lead.id]: { ...draft, status: event.target.value } })}>{crmStatuses.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></td><td><input value={draft.note} onChange={(event) => setDrafts({ ...drafts, [lead.id]: { ...draft, note: event.target.value } })} placeholder="本次跟进内容" /></td><td><button type="button" onClick={() => saveFollowup(lead)}>保存</button></td></tr>; })}</tbody></table></div></section></section></main>;
+}
+
 function Footer() {
   return (
     <footer><div className="shell footer-inner"><Brand light /><span>CHEUK NANG RIVERSIDE © 2026</span></div></footer>
@@ -1028,6 +1204,8 @@ function SiteApp() {
 }
 
 export function App() {
+  if (RESERVATIONS_ENABLED && globalThis.location?.hash.startsWith("#/crm/admin")) return <CrmAdmin />;
+  if (RESERVATIONS_ENABLED && globalThis.location?.hash.startsWith("#/crm/sales")) return <SalesCrm />;
   if (RESERVATIONS_ENABLED && (
     globalThis.location?.hostname === "records.cheuknangriverside.com"
     || globalThis.location?.hash.startsWith("#/admin/reservations")

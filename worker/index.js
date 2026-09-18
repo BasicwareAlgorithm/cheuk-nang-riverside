@@ -1,3 +1,5 @@
+import { handleCrmApi, recordCrmReservation } from "./crm.js";
+
 const RESERVATION_PATH = "/api/reservations";
 const ADMIN_API_PREFIX = "/api/admin";
 const ADMIN_PATH = "/admin/reservations";
@@ -196,6 +198,7 @@ export async function handleReservation(request, env) {
 
   const name = String(body.name ?? "").trim();
   const phone = normalizePhone(String(body.phone ?? "").trim());
+  const inviteCode = String(body.inviteCode ?? "");
   if (name.length < 2 || name.length > 30 || /[\u0000-\u001f\u007f]/.test(name)) {
     return reservationJson(request, { ok: false, message: "请输入2至30个字符的姓名。" }, 400);
   }
@@ -210,6 +213,12 @@ export async function handleReservation(request, env) {
   try {
     const result = await env.DB.prepare("INSERT INTO reservations (name, phone) VALUES (?, ?)").bind(name, phone).run();
     if (!result.success) throw new Error("D1 insert did not succeed");
+    try {
+      await recordCrmReservation(env, { name, phone, inviteCode, reservationId: result.meta?.last_row_id });
+    } catch (error) {
+      // The legacy appointment record must remain available while CRM migration is pending or being repaired.
+      console.error("CRM reservation capture failed", { requestId, reason: error.message });
+    }
     return reservationJson(request, { ok: true, requestId }, 201);
   } catch (error) {
     console.error("Reservation write failed", { requestId, reason: error.message });
@@ -303,6 +312,7 @@ export async function handleAdmin(request, env) {
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+    if (url.pathname.startsWith("/api/crm")) return handleCrmApi(request, env, isAdmin);
     if (url.pathname.startsWith(ADMIN_API_PREFIX)) return handleAdminApi(request, env);
     if (url.pathname === RESERVATION_PATH) return handleReservation(request, env);
     if (url.pathname.startsWith("/admin") || (url.hostname === "records.cheuknangriverside.com" && url.pathname === "/")) {

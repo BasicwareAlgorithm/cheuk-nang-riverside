@@ -8,7 +8,7 @@
     "build": "vite build && node scripts/build-articles.mjs && node scripts/build-locales.mjs && node scripts/prepare-sites-build.mjs",
     "build:offline": "npm run build && node scripts/build-offline.mjs",
     "preview": "vite preview",
-    "test": "node --test tests/articles-build.test.mjs tests/locales-build.test.mjs tests/mortgage.test.mjs tests/pages-admin.test.mjs tests/pages-reservation-proxy.test.mjs tests/phase2-content.test.mjs tests/sites-worker.test.mjs tests/video-origin.test.mjs",
+    "test": "node --test tests/articles-build.test.mjs tests/crm.test.mjs tests/locales-build.test.mjs tests/mortgage.test.mjs tests/pages-admin.test.mjs tests/pages-reservation-proxy.test.mjs tests/phase2-content.test.mjs tests/sites-worker.test.mjs tests/video-origin.test.mjs",
     "test:offline": "node --test tests/offline-bundle.test.mjs",
     "test:sites": "node --test tests/sites-worker.test.mjs",
     "seo:push-baidu": "node scripts/push-baidu.mjs",
