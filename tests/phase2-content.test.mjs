@@ -89,7 +89,12 @@ test("sales CRM restores saved notes in a responsive customer card layout", asyn
   assert.match(app, /note: lead\.latest_note \|\| ""/);
   assert.match(app, /className="crm-lead-card"/);
   assert.match(app, /className="crm-lead-note"/);
-  assert.match(app, /<textarea rows="3"/);
+  assert.match(app, /<textarea rows="5"/);
+  assert.match(app, /event\.key === "Enter" && !event\.shiftKey/);
+  assert.match(app, /event\.nativeEvent\.isComposing/);
+  assert.match(app, /load\(salesToken, \{ silent: true \}\)/);
+  assert.match(app, /回车自动保存 · Shift\+回车换行/);
+  assert.doesNotMatch(app, />保存跟进<\/button>/);
   assert.match(app, /跟进已保存，备注已同步。/);
 });
 
