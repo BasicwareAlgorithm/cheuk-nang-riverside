@@ -188,6 +188,7 @@ function createCrmApiD1() {
           }
           if (sql.startsWith("SELECT c.name, c.phone")) return { results: customers.map((customer) => ({ ...customer, sales_name: sales.find((account) => account.id === customer.sales_id)?.display_name || null })) };
           if (sql.startsWith("SELECT f.id, f.customer_id")) return { results: followups.filter((followup) => followup.customer_id === values[0]).reverse() };
+          if (sql.startsWith("SELECT l.created_at")) return { results: [] };
           throw new Error(`Unexpected all query: ${sql}`);
         },
       };
@@ -315,6 +316,10 @@ test("named admin roles replace shared-password access and mask phones for opera
     body: JSON.stringify({ displayName: "越权销售", loginName: "13700137000", password: "temporary-password" }),
   }), env, async () => false);
   assert.equal(operatorSalesCreate.status, 403);
+
+  const auditExport = await handleCrmApi(new Request("https://example.test/api/crm/admin/exports/audit.csv", { headers: { authorization: `Bearer ${superToken}` } }), env, async () => false);
+  assert.equal(auditExport.status, 200);
+  assert.match(auditExport.headers.get("content-type"), /text\/csv/);
 
   const importPreview = await handleCrmApi(new Request("https://example.test/api/crm/admin/imports/customers", {
     method: "POST",

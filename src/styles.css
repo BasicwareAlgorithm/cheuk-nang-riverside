@@ -405,13 +405,18 @@ section[id] { scroll-margin-top: 90px; }
 .crm-panel { background: #fff; box-shadow: 0 18px 55px rgba(7,29,52,.08); margin-top: 28px; padding: 26px 22px; }
 .crm-panel h2 { font-family: "Songti SC",serif; font-size: 24px; font-weight: 400; letter-spacing: .08em; margin: 0 0 20px; }
 .crm-admin-workspace { align-items: start; display: grid; gap: 24px; grid-template-columns: 220px minmax(0,1fr); }
-.crm-admin-nav { background: #fff; box-shadow: 0 18px 55px rgba(7,29,52,.08); display: grid; position: sticky; top: 24px; }
-.crm-admin-nav button { background: transparent; border: 0; border-bottom: 1px solid #ece7df; color: var(--ink); cursor: pointer; display: grid; gap: 7px; padding: 24px 22px; text-align: left; }
+.crm-admin-nav { background: var(--navy); box-shadow: 0 18px 55px rgba(7,29,52,.16); color: #fff; display: flex; flex-direction: column; overflow: hidden; position: sticky; top: 24px; }
+.crm-admin-nav-title { border-bottom: 1px solid rgba(255,255,255,.16); display: grid; gap: 7px; padding: 22px; }
+.crm-admin-nav-title small { color: var(--gold-light); font-family: Georgia,serif; font-size: 8px; letter-spacing: .2em; }
+.crm-admin-nav-title strong { font-family: "Songti SC",serif; font-size: 18px; font-weight: 400; letter-spacing: .1em; }
+.crm-admin-nav button { background: transparent; border: 0; border-bottom: 1px solid rgba(255,255,255,.12); color: #fff; cursor: pointer; display: grid; gap: 7px; padding: 21px 22px 21px 26px; position: relative; text-align: left; }
 .crm-admin-nav button:last-child { border-bottom: 0; }
-.crm-admin-nav button.is-active { background: var(--navy); color: #fff; }
+.crm-admin-nav button.is-active { background: rgba(255,255,255,.1); }
+.crm-admin-nav button.is-active::before { background: var(--gold-light); bottom: 0; content: ""; left: 0; position: absolute; top: 0; width: 4px; }
 .crm-admin-nav small { color: var(--gold); font-family: Georgia,serif; font-size: 9px; letter-spacing: .18em; }
 .crm-admin-nav span { font-family: "Songti SC",serif; font-size: 21px; letter-spacing: .08em; }
-.crm-admin-nav strong { font-size: 10px; font-weight: 400; letter-spacing: .08em; opacity: .62; }
+.crm-admin-nav button strong { font-size: 10px; font-weight: 400; letter-spacing: .08em; opacity: .62; }
+.crm-audit-table { min-width: 1050px !important; }
 .crm-admin-content { min-width: 0; }
 .crm-admin-content .crm-panel { margin-top: 0; }
 .crm-admin-view { padding: 0; }
@@ -580,9 +585,9 @@ footer { background: #041526; color: #fff; padding: 46px 0; }
   .context-grid { grid-template-columns: 1fr 1fr; }
   .context-panel { min-height: 260px; }
   .crm-admin-workspace { grid-template-columns: 1fr; }
-  .crm-admin-nav { grid-template-columns: 1fr 1fr; position: static; }
-  .crm-admin-nav button { border-bottom: 0; border-right: 1px solid #ece7df; padding: 18px; }
-  .crm-admin-nav button:last-child { border-right: 0; }
+  .crm-admin-nav { display: grid; grid-template-columns: 1fr 1fr; position: static; }
+  .crm-admin-nav-title { grid-column: 1 / -1; }
+  .crm-admin-nav button { border-bottom: 1px solid rgba(255,255,255,.12); border-right: 1px solid rgba(255,255,255,.12); padding: 18px; }
   .crm-lead-filters { grid-template-columns: 1fr 1fr; }
   .lifestyle { height: auto; min-height: 1080px; }
   .lifestyle-head { left: 24px; top: 90px; }

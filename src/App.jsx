@@ -1360,7 +1360,8 @@ function CrmAdmin() {
     const url = URL.createObjectURL(await response.blob());
     const link = document.createElement("a");
     link.href = url;
-    link.download = `卓能河畔轩-${type === "sales" ? "销售账号" : "客户归属"}-${new Date().toISOString().slice(0, 10)}.csv`;
+    const labels = { sales: "销售账号", leads: "客户归属", audit: "管理操作" };
+    link.download = `卓能河畔轩-${labels[type] || type}-${new Date().toISOString().slice(0, 10)}.csv`;
     document.body.append(link);
     link.click();
     link.remove();
@@ -1368,6 +1369,7 @@ function CrmAdmin() {
   };
   const exportSales = () => downloadAdminCsv("sales");
   const exportLeads = () => downloadAdminCsv("leads");
+  const exportAudit = () => downloadAdminCsv("audit");
 
   if (["checking", "loading"].includes(status)) return <main className="admin-login-page"><section className="admin-login-card"><p>CHEUK NANG RIVERSIDE</p><h1>CRM 管理后台</h1><span>正在安全连接具名管理员系统。</span><div className="admin-loading">正在连接 CRM 数据库…</div></section></main>;
 
@@ -1385,8 +1387,6 @@ function CrmAdmin() {
       <div className="crm-filter-bar"><input type="search" value={salesSearch} onChange={(event) => setSalesSearch(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") load(adminToken, { silent: true }); }} placeholder="搜索销售姓名或登录手机号" /><button type="button" onClick={() => load(adminToken, { silent: true })}>搜索</button><span>共 {salesTotal} 位销售</span></div>
       {admin?.permissions?.includes("sales_manage") && <form className="crm-form" onSubmit={createSales}><input value={newSales.displayName} onChange={(event) => setNewSales({ ...newSales, displayName: event.target.value })} placeholder="销售姓名" required /><input type="tel" inputMode="numeric" pattern="1[3-9][0-9]{9}" maxLength="11" value={newSales.loginName} onChange={(event) => setNewSales({ ...newSales, loginName: event.target.value.replace(/\D/g, "").slice(0, 11) })} placeholder="登录手机号" required /><input value={newSales.inviteCode} onChange={(event) => setNewSales({ ...newSales, inviteCode: event.target.value })} placeholder="邀请码（留空自动生成）" /><input type="password" value={newSales.password} onChange={(event) => setNewSales({ ...newSales, password: event.target.value })} placeholder="初始密码，至少 10 位" required /><button type="submit">创建账号</button></form>}
       <div className="admin-table-wrap"><table className="crm-sales-table"><thead><tr><th>销售</th><th>登录手机号／历史登录名</th><th>邀请码</th><th>状态</th><th>官方邀请链接</th><th>账号操作</th></tr></thead><tbody>{filteredSales.length ? filteredSales.map((person) => <tr key={person.id}><td>{person.display_name}</td><td>{person.login_name}</td><td>{person.invite_code}</td><td>{person.active ? "启用" : "停用"}{person.must_change_password ? " · 待改密" : ""}</td><td><code>{person.invite_url || "待配置邀请签名密钥"}</code></td><td>{admin?.permissions?.includes("sales_manage") ? <div className="crm-row-actions"><button type="button" onClick={() => changeSalesStatus(person)}>{person.active ? "停用" : "恢复"}</button><button type="button" onClick={() => changeSalesPhone(person)}>改手机号</button><button type="button" onClick={() => resetSalesPassword(person)}>重置密码</button></div> : "—"}</td></tr>) : <tr><td colSpan="6" className="crm-table-empty">没有匹配的销售账号</td></tr>}</tbody></table></div>{salesNextCursor && <button className="crm-load-more" type="button" onClick={loadMoreSales}>加载更多销售</button>}
-      {admin?.permissions?.includes("admin_manage") && <section className="crm-subsection"><div className="crm-subsection-heading"><div><p>ADMIN ACCOUNTS</p><h2>具名管理员</h2></div></div><form className="crm-form crm-admin-form" onSubmit={createNamedAdmin}><input value={newAdmin.displayName} onChange={(event) => setNewAdmin({ ...newAdmin, displayName: event.target.value })} placeholder="管理员姓名" required /><input type="tel" inputMode="numeric" value={newAdmin.loginPhone} onChange={(event) => setNewAdmin({ ...newAdmin, loginPhone: event.target.value.replace(/\D/g, "").slice(0, 11) })} placeholder="登录手机号" required /><select value={newAdmin.role} onChange={(event) => setNewAdmin({ ...newAdmin, role: event.target.value })}><option value="viewer">只读 viewer</option><option value="operator">运营 operator</option><option value="super_admin">超级管理员</option></select><input type="password" minLength="10" value={newAdmin.password} onChange={(event) => setNewAdmin({ ...newAdmin, password: event.target.value })} placeholder="临时密码，至少10位" required /><button type="submit">创建管理员</button></form><div className="admin-table-wrap"><table><thead><tr><th>管理员</th><th>手机号</th><th>角色</th><th>状态</th><th>最近登录</th></tr></thead><tbody>{admins.map((person) => <tr key={person.id}><td>{person.display_name}</td><td>{person.login_phone}</td><td>{person.role}</td><td>{person.active ? "启用" : "停用"}</td><td>{person.last_login_at || "尚未登录"}</td></tr>)}</tbody></table></div></section>}
-      {admin?.permissions?.includes("audit") && <section className="crm-subsection"><div className="crm-subsection-heading"><div><p>AUDIT LOG</p><h2>最近管理操作</h2></div></div><div className="admin-table-wrap"><table><thead><tr><th>时间</th><th>管理员</th><th>操作</th><th>原因</th><th>请求编号</th></tr></thead><tbody>{auditLogs.map((log) => <tr key={log.id}><td>{log.created_at}</td><td>{log.admin_name || log.actor_type}</td><td>{log.action}</td><td>{log.reason || "—"}</td><td><code>{log.request_id}</code></td></tr>)}</tbody></table></div></section>}
     </section>
   );
 
@@ -1400,6 +1400,23 @@ function CrmAdmin() {
     </section>
   );
 
+  const adminsView = (
+    <section className="crm-panel crm-admin-view">
+      <div className="crm-view-header"><div><p>ADMIN ACCOUNTS</p><h2>具名管理员</h2><span>创建独立管理员账号，并按角色限制管理、查看和导出权限。</span></div></div>
+      <form className="crm-form crm-admin-form" onSubmit={createNamedAdmin}><input value={newAdmin.displayName} onChange={(event) => setNewAdmin({ ...newAdmin, displayName: event.target.value })} placeholder="管理员姓名" required /><input type="tel" inputMode="numeric" value={newAdmin.loginPhone} onChange={(event) => setNewAdmin({ ...newAdmin, loginPhone: event.target.value.replace(/\D/g, "").slice(0, 11) })} placeholder="登录手机号" required /><select value={newAdmin.role} onChange={(event) => setNewAdmin({ ...newAdmin, role: event.target.value })}><option value="viewer">只读 viewer</option><option value="operator">运营 operator</option><option value="super_admin">超级管理员</option></select><input type="password" minLength="10" value={newAdmin.password} onChange={(event) => setNewAdmin({ ...newAdmin, password: event.target.value })} placeholder="临时密码，至少10位" required /><button type="submit">创建管理员</button></form>
+      <div className="admin-table-wrap"><table><thead><tr><th>管理员</th><th>登录账号</th><th>角色</th><th>状态</th><th>最近登录</th><th>创建时间</th></tr></thead><tbody>{admins.map((person) => <tr key={person.id}><td>{person.display_name}</td><td>{person.login_phone}</td><td>{person.role}</td><td>{person.active ? "启用" : "停用"}{person.must_change_password ? " · 待改密" : ""}</td><td>{person.last_login_at || "尚未登录"}</td><td>{person.created_at}</td></tr>)}</tbody></table></div>
+    </section>
+  );
+
+  const auditView = (
+    <section className="crm-panel crm-admin-view">
+      <div className="crm-view-header"><div><p>AUDIT LOG</p><h2>最近管理操作</h2><span>记录管理员、销售和系统的重要操作，CSV导出本身也会写入审计。</span></div><button type="button" onClick={exportAudit}>下载审计 CSV</button></div>
+      <div className="admin-table-wrap"><table className="crm-audit-table"><thead><tr><th>时间</th><th>管理员</th><th>主体</th><th>操作</th><th>原因</th><th>请求编号</th></tr></thead><tbody>{auditLogs.length ? auditLogs.map((log) => <tr key={log.id}><td>{log.created_at}</td><td>{log.admin_name || "—"}</td><td>{log.actor_type}</td><td>{log.action}</td><td>{log.reason || "—"}</td><td><code>{log.request_id}</code></td></tr>) : <tr><td colSpan="6" className="crm-table-empty">暂无管理操作记录</td></tr>}</tbody></table></div>
+    </section>
+  );
+
+  const activeAdminView = activeView === "sales" ? salesView : activeView === "leads" ? leadsView : activeView === "admins" ? adminsView : auditView;
+
   return (
     <main className="admin-page">
       <header className="admin-topbar"><Brand light /><button type="button" onClick={() => { setAdminToken(""); setAdmin(null); setStatus("login"); }}>退出登录</button></header>
@@ -1407,11 +1424,14 @@ function CrmAdmin() {
         <div className="admin-heading"><div><p>CRM ADMIN · {admin?.role}</p><h1>销售与客户归属</h1><span>{admin?.displayName}，邀请码只记录客户来源；销售登录后只能查看自己名下客户。</span></div><div className="admin-actions"><button type="button" onClick={() => setShowPasswordChange(true)}>修改密码</button><button type="button" onClick={() => load(adminToken, { silent: true })}>刷新</button></div></div>
         {message && <p className="crm-message" role="status">{message}</p>}
         <div className="crm-admin-workspace">
-          <aside className="crm-admin-nav" aria-label="CRM 管理页面">
+          <nav className="crm-admin-nav" aria-label="CRM 管理页面">
+            <div className="crm-admin-nav-title"><small>CRM WORKSPACE</small><strong>管理导航</strong></div>
             <button type="button" className={activeView === "sales" ? "is-active" : ""} onClick={() => setActiveView("sales")}><small>01</small><span>销售账号</span><strong>创建与查询</strong></button>
             <button type="button" className={activeView === "leads" ? "is-active" : ""} onClick={() => setActiveView("leads")}><small>02</small><span>客户归属</span><strong>公共池与转交</strong></button>
-          </aside>
-          <div className="crm-admin-content">{activeView === "sales" ? salesView : leadsView}</div>
+            {admin?.permissions?.includes("admin_manage") && <button type="button" className={activeView === "admins" ? "is-active" : ""} onClick={() => setActiveView("admins")}><small>03</small><span>具名管理员</span><strong>账号与角色</strong></button>}
+            {admin?.permissions?.includes("audit") && <button type="button" className={activeView === "audit" ? "is-active" : ""} onClick={() => setActiveView("audit")}><small>04</small><span>管理操作</span><strong>审计与导出</strong></button>}
+          </nav>
+          <div className="crm-admin-content">{activeAdminView}</div>
         </div>
       </section>
       {showPasswordChange && <div className="crm-timeline-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setShowPasswordChange(false); }}><section className="admin-login-card crm-password-card" role="dialog" aria-modal="true"><p>SECURITY UPDATE</p><h1>修改管理员密码</h1><span>修改后请使用新密码登录；账号保持不变。</span><form onSubmit={changeAdminPassword}><label><span>当前密码</span><input type="password" value={passwordForm.currentPassword} onChange={(event) => setPasswordForm({ ...passwordForm, currentPassword: event.target.value })} required /></label><label><span>新密码</span><input type="password" minLength="10" value={passwordForm.nextPassword} onChange={(event) => setPasswordForm({ ...passwordForm, nextPassword: event.target.value })} required /></label>{message && <strong role="alert">{message}</strong>}<div className="crm-password-actions"><button type="button" onClick={() => setShowPasswordChange(false)}>取消</button><button type="submit">确认修改</button></div></form></section></div>}

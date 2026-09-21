@@ -614,12 +614,17 @@ function csvResponse(filename, headers, rows) {
 }
 
 async function exportAdminCsv(request, env, actor, type) {
-  const permission = can(actor, "export_full") ? "full" : can(actor, "export_masked") ? "masked" : null;
+  const permission = type === "audit" ? (can(actor, "audit") ? "audit" : null) : can(actor, "export_full") ? "full" : can(actor, "export_masked") ? "masked" : null;
   if (!permission) return json({ ok: false, message: "无权导出数据。" }, 403);
   const url = new URL(request.url);
   let response;
   let count = 0;
-  if (type === "sales") {
+  if (type === "audit") {
+    const result = await env.DB.prepare("SELECT l.created_at, a.display_name AS admin_name, l.actor_type, l.action, l.customer_id, l.from_sales_id, l.to_sales_id, l.reason, l.request_id, l.metadata_json FROM crm_audit_logs l LEFT JOIN crm_admin_accounts a ON l.actor_admin_id = a.id ORDER BY l.id DESC LIMIT 5000").all();
+    const rows = result.results || [];
+    count = rows.length;
+    response = csvResponse("crm-audit.csv", ["时间", "管理员", "主体类型", "操作", "客户ID", "原销售ID", "目标销售ID", "原因", "请求编号", "附加信息"], rows.map((row) => [row.created_at, row.admin_name || "", row.actor_type, row.action, row.customer_id || "", row.from_sales_id || "", row.to_sales_id || "", row.reason || "", row.request_id || "", row.metadata_json || ""]));
+  } else if (type === "sales") {
     const q = validText(url.searchParams.get("q"), 1, 60);
     const where = q ? "WHERE display_name LIKE ? OR login_name LIKE ?" : "";
     const statement = env.DB.prepare(`SELECT display_name, login_name, invite_code, active, created_at FROM crm_sales_accounts ${where} ORDER BY id DESC LIMIT 5000`);
@@ -772,6 +777,7 @@ export async function handleCrmApi(request, env, isAdmin) {
     }
     if (path === "admin/exports/sales.csv" && request.method === "GET") return exportAdminCsv(request, env, actor, "sales");
     if (path === "admin/exports/leads.csv" && request.method === "GET") return exportAdminCsv(request, env, actor, "leads");
+    if (path === "admin/exports/audit.csv" && request.method === "GET") return exportAdminCsv(request, env, actor, "audit");
     if (path === "admin/audit" && request.method === "GET") return listAuditLogs(env, actor, url);
     return json({ ok: false, message: "Not found" }, 404);
   }
