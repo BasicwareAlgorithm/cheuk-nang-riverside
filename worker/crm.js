@@ -2,6 +2,7 @@ const CRM_SALES_COOKIE = "crm_sales";
 const CRM_SESSION_MAX_AGE_SECONDS = 60 * 60 * 12;
 const OWNERSHIP_LOCK_DAYS = 90;
 const PUBLIC_SITE_ORIGIN = "https://cheuknangriverside.com";
+const PBKDF2_ITERATIONS = 100000;
 const CRM_STATUSES = new Set(["new", "contacted", "appointment", "visited", "intent", "closed", "invalid"]);
 const textEncoder = new TextEncoder();
 
@@ -41,7 +42,7 @@ function hexToBytes(hex) {
   return Uint8Array.from(hex.match(/.{2}/g), (part) => Number.parseInt(part, 16));
 }
 
-async function derivePasswordHash(password, salt, iterations = 120000) {
+async function derivePasswordHash(password, salt, iterations = PBKDF2_ITERATIONS) {
   const material = await crypto.subtle.importKey("raw", textEncoder.encode(password), "PBKDF2", false, ["deriveBits"]);
   const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt, iterations }, material, 256);
   return bytesToHex(new Uint8Array(bits));
@@ -50,7 +51,7 @@ async function derivePasswordHash(password, salt, iterations = 120000) {
 async function createPasswordHash(password) {
   const salt = crypto.getRandomValues(new Uint8Array(16));
   const hash = await derivePasswordHash(password, salt);
-  return `pbkdf2$120000$${bytesToHex(salt)}$${hash}`;
+  return `pbkdf2$${PBKDF2_ITERATIONS}$${bytesToHex(salt)}$${hash}`;
 }
 
 async function verifyPassword(password, stored) {

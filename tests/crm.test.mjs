@@ -113,6 +113,15 @@ test("CRM migration contains sales isolation, ownership and audit structures", a
   assert.match(migration, /CREATE TABLE IF NOT EXISTS crm_audit_logs/);
 });
 
+test("password hashing stays within the Cloudflare Workers PBKDF2 limit", async () => {
+  const source = await readFile(new URL("../worker/crm.js", import.meta.url), "utf8");
+  const iterations = Number(source.match(/const PBKDF2_ITERATIONS = (\d+);/)?.[1]);
+
+  assert.equal(iterations, 100000);
+  assert.match(source, /iterations = PBKDF2_ITERATIONS/);
+  assert.match(source, /`pbkdf2\$\$\{PBKDF2_ITERATIONS\}\$/);
+});
+
 function createCrmApiD1() {
   const sales = [];
   const customers = [
