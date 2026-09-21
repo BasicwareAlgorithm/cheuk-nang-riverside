@@ -361,9 +361,16 @@ async function bootstrapAdmin(request, env, isBootstrapAdmin, body) {
   return json({ ok: true }, 201);
 }
 
-async function loginAdmin(env, body) {
-  const loginPhone = normalizePhone(body.loginPhone);
+async function loginAdmin(request, env, body, isBootstrapAdmin) {
+  const rawLogin = String(body.loginName || body.loginPhone || "").trim().toLowerCase();
+  const loginPhone = rawLogin === "admin" ? "admin" : normalizePhone(rawLogin);
   const password = String(body.password || "");
+  if (await adminBootstrapStatus(env)) {
+    if (loginPhone !== "admin" || !(await isBootstrapAdmin(request, env))) return json({ ok: false, message: "管理员账号或密码不正确。" }, 401);
+    const result = await env.DB.prepare("INSERT INTO crm_admin_accounts (display_name, login_phone, password_hash, role) VALUES ('超级管理员', 'admin', ?, 'super_admin')")
+      .bind(await createPasswordHash(password)).run();
+    await audit(env, { actorType: "system", action: "admin_bootstrapped", actorAdminId: result.meta?.last_row_id, reason: "automatic_admin_login" });
+  }
   const admin = await env.DB.prepare("SELECT id, display_name, login_phone, password_hash, role, active, must_change_password FROM crm_admin_accounts WHERE login_phone = ?").bind(loginPhone).first();
   if (!admin?.active || !(await verifyPassword(password, admin.password_hash))) return json({ ok: false, message: "管理员手机号或密码不正确。" }, 401);
   await env.DB.prepare("UPDATE crm_admin_accounts SET last_login_at = datetime('now', '+8 hours'), updated_at = datetime('now', '+8 hours') WHERE id = ?").bind(admin.id).run();
@@ -656,7 +663,7 @@ export async function handleCrmApi(request, env, isAdmin) {
   if (path === "admin/login" && request.method === "POST") {
     let body;
     try { body = await request.json(); } catch { return json({ ok: false, message: "请求格式无效。" }, 400); }
-    return loginAdmin(env, body);
+    return loginAdmin(request, env, body, isAdmin);
   }
   if (path === "admin/logout" && request.method === "POST") {
     return json({ ok: true }, 200, { "set-cookie": `${CRM_ADMIN_COOKIE}=; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=0` });

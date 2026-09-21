@@ -1085,9 +1085,9 @@ function CrmAdmin() {
   const [message, setMessage] = useState("");
   const [adminToken, setAdminToken] = useState("");
   const [admin, setAdmin] = useState(null);
-  const [loginForm, setLoginForm] = useState({ loginPhone: "", password: "" });
-  const [bootstrapForm, setBootstrapForm] = useState({ bootstrapPassword: "", displayName: "", loginPhone: "", password: "" });
+  const [loginForm, setLoginForm] = useState({ loginName: "admin", password: "" });
   const [passwordForm, setPasswordForm] = useState({ currentPassword: "", nextPassword: "" });
+  const [showPasswordChange, setShowPasswordChange] = useState(false);
   const [sales, setSales] = useState([]);
   const [admins, setAdmins] = useState([]);
   const [leads, setLeads] = useState([]);
@@ -1112,7 +1112,7 @@ function CrmAdmin() {
   useEffect(() => {
     fetch(`${CRM_ENDPOINT}/admin/bootstrap`)
       .then((response) => response.json())
-      .then((result) => setStatus(result.required ? "bootstrap" : "login"))
+      .then((result) => { setStatus("login"); if (result.required) setMessage("首次登录请使用账号 admin 和现有共享管理员密码，系统会自动完成初始化。"); })
       .catch(() => { setStatus("error"); setMessage("管理员初始化状态加载失败。"); });
   }, []);
 
@@ -1167,7 +1167,7 @@ function CrmAdmin() {
     setAuthSubmitting(true);
     setMessage("");
     try {
-      const response = await fetch(`${CRM_ENDPOINT}/admin/login`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(loginForm) });
+      const response = await fetch(`${CRM_ENDPOINT}/admin/login`, { method: "POST", headers: { "content-type": "application/json", "x-admin-password": loginForm.password }, body: JSON.stringify(loginForm) });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.message || "管理员登录失败。");
       setAdminToken(result.token);
@@ -1177,27 +1177,13 @@ function CrmAdmin() {
     finally { setAuthSubmitting(false); }
   };
 
-  const bootstrapAdminAccount = async (event) => {
-    event.preventDefault();
-    setAuthSubmitting(true);
-    setMessage("");
-    try {
-      const response = await fetch(`${CRM_ENDPOINT}/admin/bootstrap`, { method: "POST", headers: { "content-type": "application/json", "x-admin-password": bootstrapForm.bootstrapPassword }, body: JSON.stringify(bootstrapForm) });
-      const result = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(result.message || "超级管理员初始化失败。");
-      setBootstrapForm({ bootstrapPassword: "", displayName: "", loginPhone: "", password: "" });
-      setStatus("login");
-      setMessage("首个超级管理员已创建，共享管理员密码已停用。");
-    } catch (error) { setStatus("bootstrap"); setMessage(error.message); }
-    finally { setAuthSubmitting(false); }
-  };
-
   const changeAdminPassword = async (event) => {
     event.preventDefault();
     const response = await fetch(`${CRM_ENDPOINT}/admin/change-password`, { method: "POST", headers: { "content-type": "application/json", authorization: `Bearer ${adminToken}` }, body: JSON.stringify(passwordForm) });
     const result = await response.json().catch(() => ({}));
     if (!response.ok) { setMessage(result.message || "密码修改失败。"); return; }
     setPasswordForm({ currentPassword: "", nextPassword: "" });
+    setShowPasswordChange(false);
     await load(adminToken);
     setMessage("管理员密码已更新。");
   };
@@ -1385,16 +1371,12 @@ function CrmAdmin() {
 
   if (["checking", "loading"].includes(status)) return <main className="admin-login-page"><section className="admin-login-card"><p>CHEUK NANG RIVERSIDE</p><h1>CRM 管理后台</h1><span>正在安全连接具名管理员系统。</span><div className="admin-loading">正在连接 CRM 数据库…</div></section></main>;
 
-  if (status === "bootstrap") {
-    return <main className="admin-login-page"><section className="admin-login-card"><p>FIRST ADMIN</p><h1>初始化超级管理员</h1><span>使用现有共享管理员密码完成一次初始化。成功后，共享密码将不再用于后台登录。</span><form onSubmit={bootstrapAdminAccount}><label><span>现有共享管理员密码</span><input type="password" value={bootstrapForm.bootstrapPassword} onChange={(event) => setBootstrapForm({ ...bootstrapForm, bootstrapPassword: event.target.value })} required /></label><label><span>管理员姓名</span><input value={bootstrapForm.displayName} onChange={(event) => setBootstrapForm({ ...bootstrapForm, displayName: event.target.value })} required /></label><label><span>登录手机号</span><input type="tel" inputMode="numeric" value={bootstrapForm.loginPhone} onChange={(event) => setBootstrapForm({ ...bootstrapForm, loginPhone: event.target.value.replace(/\D/g, "").slice(0, 11) })} required /></label><label><span>新管理员密码</span><input type="password" minLength="10" value={bootstrapForm.password} onChange={(event) => setBootstrapForm({ ...bootstrapForm, password: event.target.value })} required /></label>{message && <strong role="alert">{message}</strong>}<button type="submit" disabled={authSubmitting}>{authSubmitting ? "正在初始化" : "创建超级管理员"}</button></form></section></main>;
-  }
-
   if (status === "change-password") {
     return <main className="admin-login-page"><section className="admin-login-card"><p>SECURITY UPDATE</p><h1>修改临时密码</h1><span>首次登录或密码重置后，必须设置新的管理员密码。</span><form onSubmit={changeAdminPassword}><label><span>当前临时密码</span><input type="password" value={passwordForm.currentPassword} onChange={(event) => setPasswordForm({ ...passwordForm, currentPassword: event.target.value })} required /></label><label><span>新密码</span><input type="password" minLength="10" value={passwordForm.nextPassword} onChange={(event) => setPasswordForm({ ...passwordForm, nextPassword: event.target.value })} required /></label>{message && <strong role="alert">{message}</strong>}<button type="submit">更新密码</button></form></section></main>;
   }
 
   if (["login", "error"].includes(status)) {
-    return <main className="admin-login-page"><section className="admin-login-card"><p>CHEUK NANG RIVERSIDE</p><h1>CRM 管理后台</h1><span>具名管理员请使用手机号和密码登录。</span><form onSubmit={login}><label><span>管理员手机号</span><input type="tel" inputMode="numeric" value={loginForm.loginPhone} onChange={(event) => setLoginForm({ ...loginForm, loginPhone: event.target.value.replace(/\D/g, "").slice(0, 11) })} autoComplete="username" required autoFocus /></label><label><span>管理员密码</span><input type="password" value={loginForm.password} onChange={(event) => setLoginForm({ ...loginForm, password: event.target.value })} autoComplete="current-password" required /></label>{message && <strong role="alert">{message}</strong>}<button type="submit" disabled={authSubmitting}>{authSubmitting ? "正在登录" : "进入 CRM"}</button></form></section></main>;
+    return <main className="admin-login-page"><section className="admin-login-card"><p>CHEUK NANG RIVERSIDE</p><h1>CRM 管理后台</h1><span>超级管理员使用 admin 登录；其他具名管理员使用手机号登录。</span><form onSubmit={login}><label><span>管理员账号</span><input value={loginForm.loginName} onChange={(event) => setLoginForm({ ...loginForm, loginName: event.target.value.trim().slice(0, 48) })} autoComplete="username" required autoFocus /></label><label><span>管理员密码</span><input type="password" value={loginForm.password} onChange={(event) => setLoginForm({ ...loginForm, password: event.target.value })} autoComplete="current-password" required /></label>{message && <strong role="alert">{message}</strong>}<button type="submit" disabled={authSubmitting}>{authSubmitting ? "正在登录" : "进入 CRM"}</button></form></section></main>;
   }
 
   const salesView = (
@@ -1422,7 +1404,7 @@ function CrmAdmin() {
     <main className="admin-page">
       <header className="admin-topbar"><Brand light /><button type="button" onClick={() => { setAdminToken(""); setAdmin(null); setStatus("login"); }}>退出登录</button></header>
       <section className="admin-shell crm-admin-shell">
-        <div className="admin-heading"><div><p>CRM ADMIN · {admin?.role}</p><h1>销售与客户归属</h1><span>{admin?.displayName}，邀请码只记录客户来源；销售登录后只能查看自己名下客户。</span></div><div className="admin-actions"><button type="button" onClick={() => load(adminToken, { silent: true })}>刷新</button></div></div>
+        <div className="admin-heading"><div><p>CRM ADMIN · {admin?.role}</p><h1>销售与客户归属</h1><span>{admin?.displayName}，邀请码只记录客户来源；销售登录后只能查看自己名下客户。</span></div><div className="admin-actions"><button type="button" onClick={() => setShowPasswordChange(true)}>修改密码</button><button type="button" onClick={() => load(adminToken, { silent: true })}>刷新</button></div></div>
         {message && <p className="crm-message" role="status">{message}</p>}
         <div className="crm-admin-workspace">
           <aside className="crm-admin-nav" aria-label="CRM 管理页面">
@@ -1432,6 +1414,7 @@ function CrmAdmin() {
           <div className="crm-admin-content">{activeView === "sales" ? salesView : leadsView}</div>
         </div>
       </section>
+      {showPasswordChange && <div className="crm-timeline-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setShowPasswordChange(false); }}><section className="admin-login-card crm-password-card" role="dialog" aria-modal="true"><p>SECURITY UPDATE</p><h1>修改管理员密码</h1><span>修改后请使用新密码登录；账号保持不变。</span><form onSubmit={changeAdminPassword}><label><span>当前密码</span><input type="password" value={passwordForm.currentPassword} onChange={(event) => setPasswordForm({ ...passwordForm, currentPassword: event.target.value })} required /></label><label><span>新密码</span><input type="password" minLength="10" value={passwordForm.nextPassword} onChange={(event) => setPasswordForm({ ...passwordForm, nextPassword: event.target.value })} required /></label>{message && <strong role="alert">{message}</strong>}<div className="crm-password-actions"><button type="button" onClick={() => setShowPasswordChange(false)}>取消</button><button type="submit">确认修改</button></div></form></section></div>}
     </main>
   );
 }

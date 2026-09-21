@@ -138,7 +138,10 @@ function createCrmApiD1() {
         bind(...args) { values = args; return this; },
         async run() {
           if (sql.startsWith("INSERT INTO crm_admin_accounts")) {
-            const account = { id: admins.length + 1, display_name: values[0], login_phone: values[1], password_hash: values[2], role: values[3] || "super_admin", active: 1, must_change_password: 0 };
+            const automatic = sql.includes("'超级管理员', 'admin'");
+            const account = automatic
+              ? { id: admins.length + 1, display_name: "超级管理员", login_phone: "admin", password_hash: values[0], role: "super_admin", active: 1, must_change_password: 0 }
+              : { id: admins.length + 1, display_name: values[0], login_phone: values[1], password_hash: values[2], role: values[3] || "super_admin", active: 1, must_change_password: 0 };
             admins.push(account);
             return { success: true, meta: { last_row_id: account.id } };
           }
@@ -325,6 +328,27 @@ test("named admin roles replace shared-password access and mask phones for opera
   const previewBody = await importPreview.json();
   assert.equal(previewBody.summary.skip, 1);
   assert.equal(previewBody.summary.insert, 1);
+});
+
+test("first admin login automatically creates the admin super account from the shared password", async () => {
+  const DB = createCrmApiD1();
+  const env = { DB, CRM_SESSION_SECRET: "crm-test-session-secret", CRM_INVITE_SECRET: "crm-invite-test-secret" };
+  const firstLogin = await handleCrmApi(new Request("https://example.test/api/crm/admin/login", {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-admin-password": "shared-password" },
+    body: JSON.stringify({ loginName: "admin", password: "shared-password" }),
+  }), env, async (request) => request.headers.get("x-admin-password") === "shared-password");
+  assert.equal(firstLogin.status, 200);
+  const firstBody = await firstLogin.json();
+  assert.equal(firstBody.admin.loginPhone, "admin");
+  assert.equal(firstBody.admin.role, "super_admin");
+
+  const laterLogin = await handleCrmApi(new Request("https://example.test/api/crm/admin/login", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ loginName: "admin", password: "shared-password" }),
+  }), env, async () => false);
+  assert.equal(laterLogin.status, 200);
 });
 
 test("operations migration adds admin roles, reminders, merges, imports and audit metadata", async () => {
