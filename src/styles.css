@@ -71,8 +71,8 @@ section[id] { scroll-margin-top: 90px; }
 .language-suggestion a { border-bottom: 1px solid currentColor; color: var(--navy); font-size: 12px; font-weight: 600; padding-bottom: 4px; }
 .language-suggestion button { background: transparent; border: 0; color: var(--muted); cursor: pointer; font-size: 11px; padding: 4px 0; }
 
-.hero { background: var(--navy); color: #fff; height: 100svh; min-height: 760px; overflow: hidden; position: relative; }
-.hero-image { height: calc(100% + 90px); inset: -45px 0 auto; object-fit: cover; object-position: center 48%; position: absolute; transform: translateY(calc(var(--scroll-y) * .12)) scale(1.045); width: 100%; }
+.hero { aspect-ratio: 16/9; background: var(--navy); color: #fff; height: auto; min-height: 0; overflow: hidden; position: relative; }
+.hero-image { height: 100%; inset: 0; object-fit: cover; object-position: center; position: absolute; transform: none; width: 100%; }
 .hero-veil { background: linear-gradient(90deg, rgba(3,17,31,.74) 0%, rgba(3,17,31,.38) 46%, rgba(3,17,31,.16) 75%), linear-gradient(0deg, rgba(2,14,26,.52), transparent 42%); inset: 0; position: absolute; }
 .hero-line { border: 1px solid rgba(229,208,162,.28); border-radius: 50%; height: min(70vw,830px); left: 54%; pointer-events: none; position: absolute; top: 50%; transform: translate(-50%,-50%); width: min(70vw,830px); }
 .hero-line-a { animation: orbit 14s linear infinite; }
@@ -481,7 +481,7 @@ footer { background: #041526; color: #fff; padding: 46px 0; }
   .mobile-menu .language-switcher a { border: 0; display: block; font-family: inherit; font-size: 12px; grid-template-columns: none; letter-spacing: .06em; padding: 12px 18px; width: auto; }
   .mobile-menu .language-switcher a:first-child { padding-left: 0; }
   .mobile-menu .language-switcher a.is-active::after { bottom: 7px; left: 0; right: 18px; }
-  .hero { min-height: 720px; }
+  .hero { aspect-ratio: auto; height: 100svh; min-height: 720px; }
   .hero-copy { left: 7vw; right: 7vw; }
   .hero h1 { font-size: clamp(52px,10vw,82px); }
   .hero-line { height: 85vw; left: 62%; width: 85vw; }
@@ -535,7 +535,7 @@ footer { background: #041526; color: #fff; padding: 46px 0; }
   .brand small { font-size: 6px; }
   .brand-mark { height: 34px; width: 34px; }
   .hero { min-height: 690px; }
-  .hero-image { object-position: 62% center; }
+  .hero-image { object-position: 68% center; }
   .hero-veil { background: linear-gradient(90deg,rgba(3,17,31,.72),rgba(3,17,31,.28)),linear-gradient(0deg,rgba(2,14,26,.64),transparent 50%); }
   .hero-copy { left: 24px; right: 18px; top: 47%; }
   .hero-copy::before { background: linear-gradient(90deg,rgba(3,17,31,.62),rgba(3,17,31,.18) 72%,transparent); content: ""; inset: -28px -12px -24px -24px; position: absolute; z-index: -1; }

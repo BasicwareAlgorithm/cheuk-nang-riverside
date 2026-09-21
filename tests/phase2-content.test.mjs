@@ -96,6 +96,7 @@ test("sales CRM restores saved notes in a responsive customer card layout", asyn
 test("homepage exposes a share title, description and phase 2 cover image", async () => {
   const app = await readFile(path.join(root, "src", "App.jsx"), "utf8");
   const html = await readFile(path.join(root, "index.html"), "utf8");
+  const styles = await readFile(path.join(root, "src", "styles.css"), "utf8");
 
   assert.match(app, /className="hero-image" src=\{asset\(`\$\{PHASE2\}\/hero-riverside\.jpg`\)\}/);
   assert.match(app, /tr\("卓能河畔轩水岸实景"\)/);
@@ -104,4 +105,9 @@ test("homepage exposes a share title, description and phase 2 cover image", asyn
   assert.match(html, /property="og:description"/);
   assert.match(html, /property="og:image" content="https:\/\/www\.cheuknangriverside\.com\/assets\/phase2\/hero-riverside\.jpg"/);
   assert.match(html, /name="twitter:card" content="summary_large_image"/);
+  assert.match(styles, /\.hero \{ aspect-ratio: 16\/9;/);
+  assert.match(styles, /\.hero-image \{ height: 100%; inset: 0;/);
+  assert.match(styles, /@media \(max-width: 900px\)[\s\S]*?\.hero \{ aspect-ratio: auto; height: 100svh;/);
+  assert.doesNotMatch(styles, /height: calc\(100% \+ 90px\)/);
+  assert.doesNotMatch(styles, /scale\(1\.045\)/);
 });
