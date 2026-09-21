@@ -67,6 +67,15 @@ test("test mode keeps the appointment form visible without sending customer data
   assert.match(app, /if \(!RESERVATIONS_ENABLED\) \{/);
 });
 
+test("production CRM stays on the admin domain and uses its same-origin proxy", async () => {
+  const app = await readFile(path.join(root, "src", "App.jsx"), "utf8");
+
+  assert.match(app, /const CRM_APP_ORIGIN = "https:\/\/admin\.cheuknangriverside\.com"/);
+  assert.match(app, /globalThis\.location\?\.origin === CRM_APP_ORIGIN \? "\/api\/crm"/);
+  assert.match(app, /const target = `\$\{CRM_APP_ORIGIN\}\/\$\{globalThis\.location\?\.hash/);
+  assert.doesNotMatch(app, /const target = `\$\{CRM_WORKER_ORIGIN\}/);
+});
+
 test("homepage exposes a share title, description and phase 2 cover image", async () => {
   const app = await readFile(path.join(root, "src", "App.jsx"), "utf8");
   const html = await readFile(path.join(root, "index.html"), "utf8");

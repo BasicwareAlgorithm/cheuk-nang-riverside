@@ -22,11 +22,12 @@ const PHASE2 = "/assets/phase2";
 const PROJECT_FILM_URL = `https://media.cheuknangriverside.com${MATERIAL}/project-film.mp4`;
 const DEPLOY_BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 const CRM_WORKER_ORIGIN = "https://cheuk-nang-riverside.hezhenzhen.workers.dev";
+const CRM_APP_ORIGIN = "https://admin.cheuknangriverside.com";
 const RESERVATION_ENDPOINT = import.meta.env.DEV ? "/api/reservations" : `${CRM_WORKER_ORIGIN}/api/reservations`;
 const ADMIN_ENDPOINT = "/api/admin/reservations";
 const CRM_ENDPOINT = import.meta.env.VITE_CRM_API_ORIGIN
   ? `${import.meta.env.VITE_CRM_API_ORIGIN.replace(/\/$/, "")}/api/crm`
-  : import.meta.env.DEV ? "/api/crm" : `${CRM_WORKER_ORIGIN}/api/crm`;
+  : import.meta.env.DEV || globalThis.location?.origin === CRM_APP_ORIGIN ? "/api/crm" : `${CRM_APP_ORIGIN}/api/crm`;
 const PHONE_PATTERN = /^(?:\+?86[- ]?)?1[3-9]\d{9}$/;
 const INVITE_STORAGE_KEY = "cnr-invite-code";
 const INVITE_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
@@ -1203,8 +1204,8 @@ function SalesCrm() {
 
 function CrmHostRedirect() {
   useEffect(() => {
-    const target = `${CRM_WORKER_ORIGIN}/${globalThis.location?.hash || "#/crm/admin"}`;
-    if (globalThis.location?.origin !== CRM_WORKER_ORIGIN) globalThis.location.replace(target);
+    const target = `${CRM_APP_ORIGIN}/${globalThis.location?.hash || "#/crm/admin"}`;
+    if (globalThis.location?.origin !== CRM_APP_ORIGIN) globalThis.location.replace(target);
   }, []);
   return <main className="admin-login-page"><section className="admin-login-card"><p>CHEUK NANG RIVERSIDE</p><h1>正在进入 CRM</h1><span>为保护登录与客户数据，CRM 正在切换到官方安全后台入口。</span></section></main>;
 }
@@ -1297,7 +1298,7 @@ function SiteApp() {
 
 export function App() {
   const isCrmRoute = globalThis.location?.hash.startsWith("#/crm/");
-  if (RESERVATIONS_ENABLED && isCrmRoute && !import.meta.env.DEV && globalThis.location?.origin !== CRM_WORKER_ORIGIN) return <CrmHostRedirect />;
+  if (RESERVATIONS_ENABLED && isCrmRoute && !import.meta.env.DEV && globalThis.location?.origin !== CRM_APP_ORIGIN) return <CrmHostRedirect />;
   if (RESERVATIONS_ENABLED && globalThis.location?.hash.startsWith("#/crm/admin")) return <CrmAdmin />;
   if (RESERVATIONS_ENABLED && globalThis.location?.hash.startsWith("#/crm/sales")) return <SalesCrm />;
   if (RESERVATIONS_ENABLED && (
