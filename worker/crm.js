@@ -3,6 +3,7 @@ const CRM_SESSION_MAX_AGE_SECONDS = 60 * 60 * 12;
 const OWNERSHIP_LOCK_DAYS = 90;
 const PUBLIC_SITE_ORIGIN = "https://cheuknangriverside.com";
 const PBKDF2_ITERATIONS = 100000;
+const SALES_LOGIN_PATTERN = /^1[3-9]\d{9}$/;
 const CRM_STATUSES = new Set(["new", "contacted", "appointment", "visited", "intent", "closed", "invalid"]);
 const textEncoder = new TextEncoder();
 
@@ -214,11 +215,11 @@ async function updateLeadForSales(env, sales, customerId, body) {
 
 async function adminCreateSales(request, env, body) {
   const displayName = validText(body.displayName, 2, 30);
-  const loginName = validText(body.loginName, 3, 48).toLowerCase();
+  const loginName = normalizePhone(String(body.loginName || ""));
   const password = String(body.password || "");
   const inviteCode = normalizeInviteCode(body.inviteCode) || generateInviteCode();
-  if (!displayName || !/^[a-z0-9._-]{3,48}$/.test(loginName) || password.length < 10 || password.length > 128) {
-    return json({ ok: false, message: "请填写销售姓名、3至48位登录名和至少10位密码。" }, 400);
+  if (!displayName || !SALES_LOGIN_PATTERN.test(loginName) || password.length < 10 || password.length > 128) {
+    return json({ ok: false, message: "请填写销售姓名、正确的11位登录手机号和至少10位密码。" }, 400);
   }
   try {
     const passwordHash = await createPasswordHash(password);

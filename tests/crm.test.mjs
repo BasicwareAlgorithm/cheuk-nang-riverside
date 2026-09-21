@@ -181,7 +181,15 @@ test("sales API only returns the signed-in sales person's own customers", async 
   const env = { DB, CRM_SESSION_SECRET: "crm-test-session-secret", CRM_INVITE_SECRET: "crm-invite-test-secret" };
   const isAdmin = async () => true;
 
-  for (const [displayName, loginName, inviteCode] of [["销售 A", "sales-a", "ALPHA2026"], ["销售 B", "sales-b", "BRAVO2026"]]) {
+  const invalidLogin = await handleCrmApi(new Request("https://example.test/api/crm/admin/sales", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ displayName: "旧格式", loginName: "sales-a", inviteCode: "INVALID01", password: "a-long-test-password" }),
+  }), env, isAdmin);
+  assert.equal(invalidLogin.status, 400);
+  assert.match((await invalidLogin.json()).message, /登录手机号/);
+
+  for (const [displayName, loginName, inviteCode] of [["销售 A", "13800138001", "ALPHA2026"], ["销售 B", "13800138002", "BRAVO2026"]]) {
     const response = await handleCrmApi(new Request("https://example.test/api/crm/admin/sales", {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -196,7 +204,7 @@ test("sales API only returns the signed-in sales person's own customers", async 
   const login = await handleCrmApi(new Request("https://example.test/api/crm/login", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ loginName: "sales-a", password: "a-long-test-password" }),
+    body: JSON.stringify({ loginName: "13800138001", password: "a-long-test-password" }),
   }), env, async () => false);
   assert.equal(login.status, 200);
   const cookie = login.headers.get("set-cookie").split(";", 1)[0];

@@ -1042,6 +1042,24 @@ async function createInviteQrCard({ displayName, inviteUrl }) {
   return canvas.toDataURL("image/png");
 }
 
+function csvCell(value) {
+  const text = String(value ?? "");
+  const safe = /^[=+\-@]/.test(text) ? `'${text}` : text;
+  return `"${safe.replaceAll('"', '""')}"`;
+}
+
+function downloadCsv(filename, headers, rows) {
+  const content = [headers, ...rows].map((row) => row.map(csvCell).join(",")).join("\r\n");
+  const url = URL.createObjectURL(new Blob([`\ufeff${content}`], { type: "text/csv;charset=utf-8" }));
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1_000);
+}
+
 function CrmAdmin() {
   const [status, setStatus] = useState("login");
   const [password, setPassword] = useState("");
@@ -1050,6 +1068,11 @@ function CrmAdmin() {
   const [leads, setLeads] = useState([]);
   const [newSales, setNewSales] = useState({ displayName: "", loginName: "", inviteCode: "", password: "" });
   const [assignments, setAssignments] = useState({});
+  const [activeView, setActiveView] = useState("sales");
+  const [salesSearch, setSalesSearch] = useState("");
+  const [leadSearch, setLeadSearch] = useState("");
+  const [leadStatus, setLeadStatus] = useState("");
+  const [assignmentSalesSearch, setAssignmentSalesSearch] = useState("");
 
   const load = useCallback(async (adminPassword) => {
     if (!adminPassword) { setStatus("login"); return; }
@@ -1111,11 +1134,63 @@ function CrmAdmin() {
     }
   };
 
+  const normalizedSalesSearch = salesSearch.trim().toLowerCase();
+  const filteredSales = sales.filter((person) => !normalizedSalesSearch
+    || person.display_name.toLowerCase().includes(normalizedSalesSearch)
+    || person.login_name.toLowerCase().includes(normalizedSalesSearch));
+  const normalizedLeadSearch = leadSearch.trim().toLowerCase();
+  const filteredLeads = leads.filter((lead) => (!normalizedLeadSearch
+    || lead.name.toLowerCase().includes(normalizedLeadSearch)
+    || lead.phone.includes(normalizedLeadSearch)) && (!leadStatus || lead.status === leadStatus));
+  const normalizedAssignmentSearch = assignmentSalesSearch.trim().toLowerCase();
+  const assignableSales = sales.filter((person) => person.active && (!normalizedAssignmentSearch
+    || person.display_name.toLowerCase().includes(normalizedAssignmentSearch)
+    || person.login_name.toLowerCase().includes(normalizedAssignmentSearch)));
+
+  const exportSales = () => downloadCsv(`卓能河畔轩-销售账号-${new Date().toISOString().slice(0, 10)}.csv`,
+    ["销售姓名", "登录手机号／历史登录名", "邀请码", "官方邀请链接", "状态", "创建时间"],
+    filteredSales.map((person) => [person.display_name, person.login_name, person.invite_code, person.invite_url || "", person.active ? "启用" : "停用", person.created_at || ""]));
+  const exportLeads = () => downloadCsv(`卓能河畔轩-客户归属-${new Date().toISOString().slice(0, 10)}.csv`,
+    ["客户姓名", "手机号", "状态", "当前归属", "最近咨询", "最近跟进", "最近跟进备注"],
+    filteredLeads.map((lead) => [lead.name, lead.phone, crmStatuses.find(([value]) => value === lead.status)?.[1] || lead.status, lead.sales_name || "公共客户池", lead.last_consulted_at || "", lead.last_followup_at || "", lead.latest_note || ""]));
+
   if (["loading", "login", "submitting", "error"].includes(status)) {
     return <main className="admin-login-page"><section className="admin-login-card"><p>CHEUK NANG RIVERSIDE</p><h1>CRM 管理后台</h1><span>总管理员可以创建销售账号、查看公共客户池并调整客户归属。</span>{status === "loading" ? <div className="admin-loading">正在连接 CRM 数据库…</div> : <form onSubmit={login}><label><span>管理员密码</span><input type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" required autoFocus /></label>{message && <strong role="alert">{message}</strong>}<button type="submit" disabled={status === "submitting"}>{status === "submitting" ? "正在登录" : "进入 CRM"}</button></form>}</section></main>;
   }
 
-  return <main className="admin-page"><header className="admin-topbar"><Brand light /><button type="button" onClick={() => { setPassword(""); setStatus("login"); }}>退出登录</button></header><section className="admin-shell"><div className="admin-heading"><div><p>CRM ADMIN</p><h1>销售与客户归属</h1><span>邀请码只记录客户来源；销售登录后只能查看自己名下客户。</span></div><div className="admin-actions"><button type="button" onClick={() => load(password)}>刷新</button></div></div><section className="crm-panel"><h2>创建销售账号</h2><form className="crm-form" onSubmit={createSales}><input value={newSales.displayName} onChange={(event) => setNewSales({ ...newSales, displayName: event.target.value })} placeholder="销售姓名" required /><input value={newSales.loginName} onChange={(event) => setNewSales({ ...newSales, loginName: event.target.value })} placeholder="登录名，例如 sales-a" required /><input value={newSales.inviteCode} onChange={(event) => setNewSales({ ...newSales, inviteCode: event.target.value })} placeholder="邀请码（留空自动生成）" /><input type="password" value={newSales.password} onChange={(event) => setNewSales({ ...newSales, password: event.target.value })} placeholder="初始密码，至少 10 位" required /><button type="submit">创建账号</button></form>{message && <p className="crm-message" role="status">{message}</p>}<div className="admin-table-wrap"><table><thead><tr><th>销售</th><th>登录名</th><th>邀请码</th><th>官方邀请链接</th></tr></thead><tbody>{sales.map((person) => <tr key={person.id}><td>{person.display_name}</td><td>{person.login_name}</td><td>{person.invite_code}</td><td><code>{person.invite_url || "待配置邀请签名密钥"}</code></td></tr>)}</tbody></table></div></section><section className="crm-panel crm-admin-leads-panel"><h2>客户归属与公共池</h2><div className="admin-table-wrap"><table className="crm-admin-leads-table"><thead><tr><th>客户</th><th>手机号</th><th>状态</th><th>当前归属</th><th>分配／转交</th></tr></thead><tbody>{leads.map((lead) => <tr key={lead.id}><td>{lead.name}</td><td>{lead.phone}</td><td>{crmStatuses.find(([value]) => value === lead.status)?.[1] || lead.status}</td><td>{lead.sales_name || "公共客户池"}</td><td><div className="crm-assignment"><select value={assignments[lead.id]?.salesId || ""} onChange={(event) => setAssignments({ ...assignments, [lead.id]: { ...assignments[lead.id], salesId: event.target.value } })}><option value="">选择销售</option>{sales.filter((person) => person.active).map((person) => <option key={person.id} value={person.id}>{person.display_name}</option>)}</select><input value={assignments[lead.id]?.reason || ""} onChange={(event) => setAssignments({ ...assignments, [lead.id]: { ...assignments[lead.id], reason: event.target.value } })} placeholder="调整原因" /><button type="button" onClick={() => assignLead(lead.id)}>确认</button></div></td></tr>)}</tbody></table></div></section></section></main>;
+  const salesView = (
+    <section className="crm-panel crm-admin-view">
+      <div className="crm-view-header"><div><p>SALES ACCOUNTS</p><h2>创建销售账号</h2><span>新账号统一使用中国大陆手机号登录；历史账号暂保留原登录名。</span></div><button type="button" onClick={exportSales}>下载销售 CSV</button></div>
+      <div className="crm-filter-bar"><input type="search" value={salesSearch} onChange={(event) => setSalesSearch(event.target.value)} placeholder="搜索销售姓名或登录手机号" /><span>{filteredSales.length} 位销售</span></div>
+      <form className="crm-form" onSubmit={createSales}><input value={newSales.displayName} onChange={(event) => setNewSales({ ...newSales, displayName: event.target.value })} placeholder="销售姓名" required /><input type="tel" inputMode="numeric" pattern="1[3-9][0-9]{9}" maxLength="11" value={newSales.loginName} onChange={(event) => setNewSales({ ...newSales, loginName: event.target.value.replace(/\D/g, "").slice(0, 11) })} placeholder="登录手机号" required /><input value={newSales.inviteCode} onChange={(event) => setNewSales({ ...newSales, inviteCode: event.target.value })} placeholder="邀请码（留空自动生成）" /><input type="password" value={newSales.password} onChange={(event) => setNewSales({ ...newSales, password: event.target.value })} placeholder="初始密码，至少 10 位" required /><button type="submit">创建账号</button></form>
+      <div className="admin-table-wrap"><table className="crm-sales-table"><thead><tr><th>销售</th><th>登录手机号／历史登录名</th><th>邀请码</th><th>官方邀请链接</th></tr></thead><tbody>{filteredSales.length ? filteredSales.map((person) => <tr key={person.id}><td>{person.display_name}</td><td>{person.login_name}</td><td>{person.invite_code}</td><td><code>{person.invite_url || "待配置邀请签名密钥"}</code></td></tr>) : <tr><td colSpan="4" className="crm-table-empty">没有匹配的销售账号</td></tr>}</tbody></table></div>
+    </section>
+  );
+
+  const leadsView = (
+    <section className="crm-panel crm-admin-view crm-admin-leads-panel">
+      <div className="crm-view-header"><div><p>LEAD OWNERSHIP</p><h2>客户归属与公共池</h2><span>搜索客户并将其分配或转交给指定销售。</span></div><button type="button" onClick={exportLeads}>下载客户 CSV</button></div>
+      <div className="crm-filter-bar crm-lead-filters"><input type="search" value={leadSearch} onChange={(event) => setLeadSearch(event.target.value)} placeholder="搜索客户姓名或手机号" /><select value={leadStatus} onChange={(event) => setLeadStatus(event.target.value)}><option value="">全部客户状态</option>{crmStatuses.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select><input type="search" value={assignmentSalesSearch} onChange={(event) => setAssignmentSalesSearch(event.target.value)} placeholder="搜索可分配销售姓名或手机号" /><span>{filteredLeads.length} 位客户</span></div>
+      <div className="admin-table-wrap"><table className="crm-admin-leads-table"><thead><tr><th>客户</th><th>手机号</th><th>状态</th><th>当前归属</th><th>分配／转交</th></tr></thead><tbody>{filteredLeads.length ? filteredLeads.map((lead) => { const selectedSalesId = Number(assignments[lead.id]?.salesId || 0); const salesOptions = sales.filter((person) => person.active && (assignableSales.some((match) => match.id === person.id) || person.id === selectedSalesId)); return <tr key={lead.id}><td>{lead.name}</td><td>{lead.phone}</td><td>{crmStatuses.find(([value]) => value === lead.status)?.[1] || lead.status}</td><td>{lead.sales_name || "公共客户池"}</td><td><div className="crm-assignment"><select value={assignments[lead.id]?.salesId || ""} onChange={(event) => setAssignments({ ...assignments, [lead.id]: { ...assignments[lead.id], salesId: event.target.value } })}><option value="">{salesOptions.length ? "选择销售" : "无匹配销售"}</option>{salesOptions.map((person) => <option key={person.id} value={person.id}>{person.display_name} · {person.login_name}</option>)}</select><input value={assignments[lead.id]?.reason || ""} onChange={(event) => setAssignments({ ...assignments, [lead.id]: { ...assignments[lead.id], reason: event.target.value } })} placeholder="调整原因" /><button type="button" onClick={() => assignLead(lead.id)}>确认</button></div></td></tr>; }) : <tr><td colSpan="5" className="crm-table-empty">没有匹配的客户</td></tr>}</tbody></table></div>
+    </section>
+  );
+
+  return (
+    <main className="admin-page">
+      <header className="admin-topbar"><Brand light /><button type="button" onClick={() => { setPassword(""); setStatus("login"); }}>退出登录</button></header>
+      <section className="admin-shell crm-admin-shell">
+        <div className="admin-heading"><div><p>CRM ADMIN</p><h1>销售与客户归属</h1><span>邀请码只记录客户来源；销售登录后只能查看自己名下客户。</span></div><div className="admin-actions"><button type="button" onClick={() => load(password)}>刷新</button></div></div>
+        {message && <p className="crm-message" role="status">{message}</p>}
+        <div className="crm-admin-workspace">
+          <aside className="crm-admin-nav" aria-label="CRM 管理页面">
+            <button type="button" className={activeView === "sales" ? "is-active" : ""} onClick={() => setActiveView("sales")}><small>01</small><span>销售账号</span><strong>创建与查询</strong></button>
+            <button type="button" className={activeView === "leads" ? "is-active" : ""} onClick={() => setActiveView("leads")}><small>02</small><span>客户归属</span><strong>公共池与转交</strong></button>
+          </aside>
+          <div className="crm-admin-content">{activeView === "sales" ? salesView : leadsView}</div>
+        </div>
+      </section>
+    </main>
+  );
 }
 
 function SalesCrm() {
