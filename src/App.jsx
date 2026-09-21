@@ -23,7 +23,7 @@ const PROJECT_FILM_URL = `https://media.cheuknangriverside.com${MATERIAL}/projec
 const DEPLOY_BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 const CRM_WORKER_ORIGIN = "https://cheuk-nang-riverside.hezhenzhen.workers.dev";
 const CRM_APP_ORIGIN = "https://admin.cheuknangriverside.com";
-const RESERVATION_ENDPOINT = import.meta.env.DEV ? "/api/reservations" : `${CRM_WORKER_ORIGIN}/api/reservations`;
+const RESERVATION_ENDPOINT = "/api/reservations";
 const ADMIN_ENDPOINT = "/api/admin/reservations";
 const CRM_ENDPOINT = import.meta.env.VITE_CRM_API_ORIGIN
   ? `${import.meta.env.VITE_CRM_API_ORIGIN.replace(/\/$/, "")}/api/crm`

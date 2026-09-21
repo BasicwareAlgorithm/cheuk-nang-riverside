@@ -76,6 +76,13 @@ test("production CRM stays on the admin domain and uses its same-origin proxy", 
   assert.doesNotMatch(app, /const target = `\$\{CRM_WORKER_ORIGIN\}/);
 });
 
+test("appointment submissions use the same-origin Pages proxy", async () => {
+  const app = await readFile(path.join(root, "src", "App.jsx"), "utf8");
+
+  assert.match(app, /const RESERVATION_ENDPOINT = "\/api\/reservations"/);
+  assert.doesNotMatch(app, /CRM_WORKER_ORIGIN\}\/api\/reservations/);
+});
+
 test("homepage exposes a share title, description and phase 2 cover image", async () => {
   const app = await readFile(path.join(root, "src", "App.jsx"), "utf8");
   const html = await readFile(path.join(root, "index.html"), "utf8");

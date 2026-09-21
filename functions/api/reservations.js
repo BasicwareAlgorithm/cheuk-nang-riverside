@@ -16,6 +16,12 @@ function normalizePhone(value) {
 }
 
 export async function onRequestPost({ request, env }) {
+  if (env.CRM_WORKER?.fetch) {
+    const headers = new Headers(request.headers);
+    headers.delete("origin");
+    return env.CRM_WORKER.fetch(new Request(request, { headers }));
+  }
+
   if (!env.DB) return json({ ok: false, message: "预约服务正在配置中，请拨打品鉴热线。" }, 503);
   if (!request.headers.get("content-type")?.toLowerCase().startsWith("application/json")) {
     return json({ ok: false, message: "请求格式无效。" }, 415);

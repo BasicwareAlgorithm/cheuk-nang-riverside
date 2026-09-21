@@ -21,6 +21,31 @@ function makeEnv() {
   };
 }
 
+test("proxies production reservations through the CRM service binding", async () => {
+  let upstream;
+  const payload = { name: "张三", phone: "13800138000", inviteCode: "SALES01", inviteSignature: "a".repeat(64) };
+  const response = await onRequestPost({
+    env: {
+      CRM_WORKER: {
+        async fetch(request) {
+          upstream = request;
+          return Response.json({ ok: true, requestId: "proxy-test" }, { status: 201 });
+        },
+      },
+    },
+    request: new Request("https://cheuknangriverside.com/api/reservations", {
+      method: "POST",
+      headers: { "content-type": "application/json", origin: "https://cheuknangriverside.com" },
+      body: JSON.stringify(payload),
+    }),
+  });
+
+  assert.equal(response.status, 201);
+  assert.equal(upstream.url, "https://cheuknangriverside.com/api/reservations");
+  assert.equal(upstream.headers.get("origin"), null);
+  assert.deepEqual(await upstream.json(), payload);
+});
+
 test("writes same-origin reservation submissions directly to D1", async () => {
   const { env, writes } = makeEnv();
   const response = await onRequestPost({
