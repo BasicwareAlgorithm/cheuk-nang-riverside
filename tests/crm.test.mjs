@@ -332,12 +332,16 @@ test("named admin roles replace shared-password access and mask phones for opera
 
 test("first admin login automatically creates the admin super account from the shared password", async () => {
   const DB = createCrmApiD1();
-  const env = { DB, CRM_SESSION_SECRET: "crm-test-session-secret", CRM_INVITE_SECRET: "crm-invite-test-secret" };
+  const env = { DB, ADMIN_PASSWORD: "shared-password", CRM_SESSION_SECRET: "crm-test-session-secret", CRM_INVITE_SECRET: "crm-invite-test-secret" };
+  const status = await handleCrmApi(new Request("https://example.test/api/crm/admin/bootstrap"), env, async () => false);
+  const statusBody = await status.json();
+  assert.equal(statusBody.created, true);
+  assert.equal(statusBody.required, false);
   const firstLogin = await handleCrmApi(new Request("https://example.test/api/crm/admin/login", {
     method: "POST",
-    headers: { "content-type": "application/json", "x-admin-password": "shared-password" },
+    headers: { "content-type": "application/json" },
     body: JSON.stringify({ loginName: "admin", password: "shared-password" }),
-  }), env, async (request) => request.headers.get("x-admin-password") === "shared-password");
+  }), env, async () => false);
   assert.equal(firstLogin.status, 200);
   const firstBody = await firstLogin.json();
   assert.equal(firstBody.admin.loginPhone, "admin");

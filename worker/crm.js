@@ -345,6 +345,14 @@ async function adminBootstrapStatus(env) {
   return Number(row?.total || 0) === 0;
 }
 
+async function ensureDefaultAdmin(env) {
+  if (!(await adminBootstrapStatus(env)) || !env.ADMIN_PASSWORD) return false;
+  const result = await env.DB.prepare("INSERT INTO crm_admin_accounts (display_name, login_phone, password_hash, role) VALUES ('超级管理员', 'admin', ?, 'super_admin')")
+    .bind(await createPasswordHash(env.ADMIN_PASSWORD)).run();
+  await audit(env, { actorType: "system", action: "admin_bootstrapped", actorAdminId: result.meta?.last_row_id, reason: "automatic_worker_secret" });
+  return true;
+}
+
 async function bootstrapAdmin(request, env, isBootstrapAdmin, body) {
   if (!(await adminBootstrapStatus(env))) return json({ ok: false, message: "具名管理员已经初始化。" }, 409);
   if (!(await isBootstrapAdmin(request, env))) return json({ ok: false, message: "初始化凭证不正确。" }, 401);
@@ -654,7 +662,10 @@ export async function handleCrmApi(request, env, isAdmin) {
   const url = new URL(request.url);
   const path = url.pathname.replace(/^\/api\/crm\/?/, "");
 
-  if (path === "admin/bootstrap" && request.method === "GET") return json({ ok: true, required: await adminBootstrapStatus(env) });
+  if (path === "admin/bootstrap" && request.method === "GET") {
+    const created = await ensureDefaultAdmin(env);
+    return json({ ok: true, required: await adminBootstrapStatus(env), created });
+  }
   if (path === "admin/bootstrap" && request.method === "POST") {
     let body;
     try { body = await request.json(); } catch { return json({ ok: false, message: "请求格式无效。" }, 400); }

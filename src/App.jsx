@@ -1112,7 +1112,7 @@ function CrmAdmin() {
   useEffect(() => {
     fetch(`${CRM_ENDPOINT}/admin/bootstrap`)
       .then((response) => response.json())
-      .then((result) => { setStatus("login"); if (result.required) setMessage("首次登录请使用账号 admin 和现有共享管理员密码，系统会自动完成初始化。"); })
+      .then(() => setStatus("login"))
       .catch(() => { setStatus("error"); setMessage("管理员初始化状态加载失败。"); });
   }, []);
 
