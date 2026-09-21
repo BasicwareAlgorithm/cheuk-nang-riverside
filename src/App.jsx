@@ -340,7 +340,7 @@ function Header({ solid, open, setOpen, onBooking }) {
 function Hero() {
   return (
     <section className="hero" id="top">
-      <img className="hero-image" src={asset(`${MATERIAL}/river-view.jpeg`)} alt={tr("卓能河畔轩水岸实景")} fetchPriority="high" />
+      <img className="hero-image" src={asset(`${PHASE2}/hero-aerial.jpg`)} alt={tr("卓能河畔轩整体改造效果图")} fetchPriority="high" />
       <div className="hero-veil" />
       <div className="hero-line hero-line-a" /><div className="hero-line hero-line-b" />
       <div className="hero-copy">
@@ -349,7 +349,7 @@ function Hero() {
         <div className="hero-rule" />
         <h2>{tr("轻享杭州的丰盈生活")}</h2>
         <p className="hero-meta">{tr("临平崇贤 · 滨水生活 · 建面约65-138㎡多元户型")}</p>
-        <span className="visual-status">{tr("项目改造效果图")}</span>
+        <span className="visual-status">{tr("整体改造效果图")}</span>
       </div>
       <a className="hero-scroll" href="#heritage"><span>SCROLL</span><ArrowDown size={17} /></a>
       <div className="hero-side-word" aria-hidden="true">RIVERSIDE</div>
