@@ -99,6 +99,17 @@ test("sales CRM restores saved notes in a responsive customer card layout", asyn
   assert.match(app, /跟进已保存，备注已同步。/);
 });
 
+test("admin customer assignment uses a full-width single-row table", async () => {
+  const app = await readFile(path.join(root, "src", "App.jsx"), "utf8");
+  const styles = await readFile(path.join(root, "src", "styles.css"), "utf8");
+
+  assert.match(app, /className="crm-panel crm-admin-leads-panel"/);
+  assert.match(app, /className="crm-admin-leads-table"/);
+  assert.match(styles, /\.crm-admin-leads-table \{ min-width: 1050px !important; table-layout: fixed;/);
+  assert.match(styles, /\.crm-admin-leads-table th:nth-child\(5\) \{ width: 44%; \}/);
+  assert.match(styles, /\.crm-assignment \{ gap: 16px;/);
+});
+
 test("homepage exposes a share title, description and phase 2 cover image", async () => {
   const app = await readFile(path.join(root, "src", "App.jsx"), "utf8");
   const html = await readFile(path.join(root, "index.html"), "utf8");
