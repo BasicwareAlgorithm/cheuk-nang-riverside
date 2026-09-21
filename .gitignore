@@ -1,9 +1,12 @@
 .DS_Store
 .env.crm.local
+.dev.vars
 AGENTS.md
 design-qa.md
 node_modules/
 dist/
+backups/
+.wrangler/
 qa/
 qa-v2/
 public/qa/

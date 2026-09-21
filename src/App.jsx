@@ -1042,29 +1042,54 @@ async function createInviteQrCard({ displayName, inviteUrl }) {
   return canvas.toDataURL("image/png");
 }
 
-function csvCell(value) {
-  const text = String(value ?? "");
-  const safe = /^[=+\-@]/.test(text) ? `'${text}` : text;
-  return `"${safe.replaceAll('"', '""')}"`;
-}
-
-function downloadCsv(filename, headers, rows) {
-  const content = [headers, ...rows].map((row) => row.map(csvCell).join(",")).join("\r\n");
-  const url = URL.createObjectURL(new Blob([`\ufeff${content}`], { type: "text/csv;charset=utf-8" }));
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = filename;
-  document.body.append(link);
-  link.click();
-  link.remove();
-  window.setTimeout(() => URL.revokeObjectURL(url), 1_000);
+function parseCsv(text) {
+  const rows = [];
+  let row = [];
+  let cell = "";
+  let quoted = false;
+  const source = String(text || "").replace(/^\ufeff/, "");
+  for (let index = 0; index < source.length; index += 1) {
+    const char = source[index];
+    if (char === '"' && quoted && source[index + 1] === '"') { cell += '"'; index += 1; }
+    else if (char === '"') quoted = !quoted;
+    else if (char === "," && !quoted) { row.push(cell.trim()); cell = ""; }
+    else if ((char === "\n" || char === "\r") && !quoted) {
+      if (char === "\r" && source[index + 1] === "\n") index += 1;
+      row.push(cell.trim());
+      if (row.some(Boolean)) rows.push(row);
+      row = [];
+      cell = "";
+    } else cell += char;
+  }
+  row.push(cell.trim());
+  if (row.some(Boolean)) rows.push(row);
+  if (rows.length < 2) return [];
+  const headers = rows[0];
+  const value = (record, names) => {
+    const position = headers.findIndex((header) => names.includes(header));
+    return position >= 0 ? record[position] || "" : "";
+  };
+  return rows.slice(1).map((record) => ({
+    name: value(record, ["客户姓名", "姓名", "name"]),
+    phone: value(record, ["手机号", "手机号码", "phone"]),
+    salesLoginPhone: value(record, ["销售登录手机号", "销售手机号", "sales_phone"]),
+    status: value(record, ["状态", "status"]) || "new",
+    note: value(record, ["备注", "跟进备注", "note"]),
+    nextFollowupAt: value(record, ["下次跟进时间", "next_followup_at"]),
+  }));
 }
 
 function CrmAdmin() {
-  const [status, setStatus] = useState("login");
-  const [password, setPassword] = useState("");
+  const [status, setStatus] = useState("checking");
+  const [authSubmitting, setAuthSubmitting] = useState(false);
   const [message, setMessage] = useState("");
+  const [adminToken, setAdminToken] = useState("");
+  const [admin, setAdmin] = useState(null);
+  const [loginForm, setLoginForm] = useState({ loginPhone: "", password: "" });
+  const [bootstrapForm, setBootstrapForm] = useState({ bootstrapPassword: "", displayName: "", loginPhone: "", password: "" });
+  const [passwordForm, setPasswordForm] = useState({ currentPassword: "", nextPassword: "" });
   const [sales, setSales] = useState([]);
+  const [admins, setAdmins] = useState([]);
   const [leads, setLeads] = useState([]);
   const [newSales, setNewSales] = useState({ displayName: "", loginName: "", inviteCode: "", password: "" });
   const [assignments, setAssignments] = useState({});
@@ -1073,49 +1098,190 @@ function CrmAdmin() {
   const [leadSearch, setLeadSearch] = useState("");
   const [leadStatus, setLeadStatus] = useState("");
   const [assignmentSalesSearch, setAssignmentSalesSearch] = useState("");
+  const [newAdmin, setNewAdmin] = useState({ displayName: "", loginPhone: "", role: "viewer", password: "" });
+  const [salesTotal, setSalesTotal] = useState(0);
+  const [leadsTotal, setLeadsTotal] = useState(0);
+  const [salesNextCursor, setSalesNextCursor] = useState(null);
+  const [leadsNextCursor, setLeadsNextCursor] = useState(null);
+  const [auditLogs, setAuditLogs] = useState([]);
+  const [selectedLeadIds, setSelectedLeadIds] = useState([]);
+  const [batchAssignment, setBatchAssignment] = useState({ salesId: "", reason: "" });
+  const [importState, setImportState] = useState({ filename: "", rows: [], preview: [], summary: null });
+  const [mergeState, setMergeState] = useState({ masterId: "", reason: "" });
 
-  const load = useCallback(async (adminPassword) => {
-    if (!adminPassword) { setStatus("login"); return; }
-    setStatus("loading");
-    setMessage("");
+  useEffect(() => {
+    fetch(`${CRM_ENDPOINT}/admin/bootstrap`)
+      .then((response) => response.json())
+      .then((result) => setStatus(result.required ? "bootstrap" : "login"))
+      .catch(() => { setStatus("error"); setMessage("管理员初始化状态加载失败。"); });
+  }, []);
+
+  const load = useCallback(async (token, { silent = false } = {}) => {
+    if (!token) { setStatus("login"); return; }
+    if (!silent) { setStatus("loading"); setMessage(""); }
     try {
-      const headers = { "x-admin-password": adminPassword };
-      const [salesResponse, leadsResponse] = await Promise.all([
-        fetch(`${CRM_ENDPOINT}/admin/sales`, { headers }),
-        fetch(`${CRM_ENDPOINT}/admin/leads`, { headers }),
+      const headers = { authorization: `Bearer ${token}` };
+      const salesParams = new URLSearchParams({ page_size: "100" });
+      const leadsParams = new URLSearchParams({ page_size: "100" });
+      if (salesSearch.trim()) salesParams.set("q", salesSearch.trim());
+      if (leadSearch.trim()) leadsParams.set("q", leadSearch.trim());
+      if (leadStatus) leadsParams.set("status", leadStatus);
+      const [meResponse, salesResponse, leadsResponse] = await Promise.all([
+        fetch(`${CRM_ENDPOINT}/admin/me`, { headers }),
+        fetch(`${CRM_ENDPOINT}/admin/sales?${salesParams}`, { headers }),
+        fetch(`${CRM_ENDPOINT}/admin/leads?${leadsParams}`, { headers }),
       ]);
-      if (salesResponse.status === 401 || leadsResponse.status === 401) {
+      if (meResponse.status === 401 || salesResponse.status === 401 || leadsResponse.status === 401) {
         setStatus("login");
         return;
       }
+      const meData = await meResponse.json().catch(() => ({}));
       const salesData = await salesResponse.json().catch(() => ({}));
       const leadsData = await leadsResponse.json().catch(() => ({}));
+      if (!meResponse.ok) throw new Error(meData.message || "管理员账号加载失败。");
       if (!salesResponse.ok) throw new Error(salesData.message || "CRM 销售账号加载失败。");
       if (!leadsResponse.ok) throw new Error(leadsData.message || "CRM 客户列表加载失败。");
+      setAdmin(meData.admin);
       setSales(salesData.sales || []);
       setLeads(leadsData.leads || []);
-      setStatus("ready");
+      setSalesTotal(Number(salesData.total || 0));
+      setLeadsTotal(Number(leadsData.total || 0));
+      setSalesNextCursor(salesData.next_cursor || null);
+      setLeadsNextCursor(leadsData.next_cursor || null);
+      if (meData.admin?.permissions?.includes("admin_manage")) {
+        const [adminsResponse, auditResponse] = await Promise.all([fetch(`${CRM_ENDPOINT}/admin/admins`, { headers }), fetch(`${CRM_ENDPOINT}/admin/audit?page_size=20`, { headers })]);
+        const adminsData = await adminsResponse.json().catch(() => ({}));
+        const auditData = await auditResponse.json().catch(() => ({}));
+        if (adminsResponse.ok) setAdmins(adminsData.admins || []);
+        if (auditResponse.ok) setAuditLogs(auditData.items || []);
+      }
+      setStatus(meData.admin?.mustChangePassword ? "change-password" : "ready");
     } catch (error) {
-      setStatus("error");
+      if (!silent) setStatus("error");
       setMessage(error.message);
     }
-  }, []);
+  }, [salesSearch, leadSearch, leadStatus]);
 
   const login = async (event) => {
     event.preventDefault();
-    await load(password);
+    setAuthSubmitting(true);
+    setMessage("");
+    try {
+      const response = await fetch(`${CRM_ENDPOINT}/admin/login`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(loginForm) });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.message || "管理员登录失败。");
+      setAdminToken(result.token);
+      setAdmin(result.admin);
+      await load(result.token);
+    } catch (error) { setStatus("login"); setMessage(error.message); }
+    finally { setAuthSubmitting(false); }
+  };
+
+  const bootstrapAdminAccount = async (event) => {
+    event.preventDefault();
+    setAuthSubmitting(true);
+    setMessage("");
+    try {
+      const response = await fetch(`${CRM_ENDPOINT}/admin/bootstrap`, { method: "POST", headers: { "content-type": "application/json", "x-admin-password": bootstrapForm.bootstrapPassword }, body: JSON.stringify(bootstrapForm) });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.message || "超级管理员初始化失败。");
+      setBootstrapForm({ bootstrapPassword: "", displayName: "", loginPhone: "", password: "" });
+      setStatus("login");
+      setMessage("首个超级管理员已创建，共享管理员密码已停用。");
+    } catch (error) { setStatus("bootstrap"); setMessage(error.message); }
+    finally { setAuthSubmitting(false); }
+  };
+
+  const changeAdminPassword = async (event) => {
+    event.preventDefault();
+    const response = await fetch(`${CRM_ENDPOINT}/admin/change-password`, { method: "POST", headers: { "content-type": "application/json", authorization: `Bearer ${adminToken}` }, body: JSON.stringify(passwordForm) });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) { setMessage(result.message || "密码修改失败。"); return; }
+    setPasswordForm({ currentPassword: "", nextPassword: "" });
+    await load(adminToken);
+    setMessage("管理员密码已更新。");
+  };
+
+  const adminRequest = async (path, options = {}) => {
+    const response = await fetch(`${CRM_ENDPOINT}${path}`, { ...options, headers: { ...(options.headers || {}), authorization: `Bearer ${adminToken}` } });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(result.message || "操作失败。");
+    return result;
+  };
+
+  const loadMoreSales = async () => {
+    if (!salesNextCursor) return;
+    const params = new URLSearchParams({ page_size: "100", cursor: salesNextCursor });
+    if (salesSearch.trim()) params.set("q", salesSearch.trim());
+    const result = await adminRequest(`/admin/sales?${params}`);
+    setSales((current) => [...current, ...(result.sales || [])]);
+    setSalesNextCursor(result.next_cursor || null);
+  };
+
+  const loadMoreLeads = async () => {
+    if (!leadsNextCursor) return;
+    const params = new URLSearchParams({ page_size: "100", cursor: leadsNextCursor });
+    if (leadSearch.trim()) params.set("q", leadSearch.trim());
+    if (leadStatus) params.set("status", leadStatus);
+    const result = await adminRequest(`/admin/leads?${params}`);
+    setLeads((current) => [...current, ...(result.leads || [])]);
+    setLeadsNextCursor(result.next_cursor || null);
+  };
+
+  const createNamedAdmin = async (event) => {
+    event.preventDefault();
+    setMessage("");
+    try {
+      await adminRequest("/admin/admins", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(newAdmin) });
+      setNewAdmin({ displayName: "", loginPhone: "", role: "viewer", password: "" });
+      await load(adminToken, { silent: true });
+      setMessage("具名管理员账号已创建。");
+    } catch (error) { setMessage(error.message); }
+  };
+
+  const changeSalesStatus = async (person) => {
+    const reason = globalThis.prompt(`请填写${person.active ? "停用" : "恢复"}${person.display_name}的原因：`);
+    if (!reason) return;
+    try {
+      await adminRequest(`/admin/sales/${person.id}/status`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ active: !person.active, reason }) });
+      await load(adminToken, { silent: true });
+      setMessage(`已${person.active ? "停用" : "恢复"}${person.display_name}。`);
+    } catch (error) { setMessage(error.message); }
+  };
+
+  const changeSalesPhone = async (person) => {
+    const loginPhone = globalThis.prompt(`请输入${person.display_name}的新登录手机号：`, /^1[3-9]\d{9}$/.test(person.login_name) ? person.login_name : "");
+    if (!loginPhone) return;
+    const reason = globalThis.prompt("请填写修改手机号的原因：");
+    if (!reason) return;
+    try {
+      await adminRequest(`/admin/sales/${person.id}/phone`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ loginPhone, reason }) });
+      await load(adminToken, { silent: true });
+      setMessage("销售登录手机号已更新。");
+    } catch (error) { setMessage(error.message); }
+  };
+
+  const resetSalesPassword = async (person) => {
+    const password = globalThis.prompt(`请输入${person.display_name}的新临时密码（至少10位）：`);
+    if (!password) return;
+    const reason = globalThis.prompt("请填写重置密码的原因：");
+    if (!reason) return;
+    try {
+      await adminRequest(`/admin/sales/${person.id}/reset-password`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ password, reason }) });
+      setMessage("临时密码已设置，销售下次登录必须修改密码。");
+    } catch (error) { setMessage(error.message); }
   };
 
   const createSales = async (event) => {
     event.preventDefault();
     setMessage("");
     try {
-      const response = await fetch(`${CRM_ENDPOINT}/admin/sales`, { method: "POST", headers: { "content-type": "application/json", "x-admin-password": password }, body: JSON.stringify(newSales) });
+      const response = await fetch(`${CRM_ENDPOINT}/admin/sales`, { method: "POST", headers: { "content-type": "application/json", authorization: `Bearer ${adminToken}` }, body: JSON.stringify(newSales) });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.message || "销售账号创建失败。");
       setNewSales({ displayName: "", loginName: "", inviteCode: "", password: "" });
       setMessage(`已创建 ${result.sales.displayName}，邀请码：${result.sales.inviteCode}`);
-      await load(password);
+      await load(adminToken, { silent: true });
     } catch (error) {
       setMessage(error.message);
     }
@@ -1125,13 +1291,59 @@ function CrmAdmin() {
     const draft = assignments[leadId] || {};
     setMessage("");
     try {
-      const response = await fetch(`${CRM_ENDPOINT}/admin/leads/${leadId}/assign`, { method: "POST", headers: { "content-type": "application/json", "x-admin-password": password }, body: JSON.stringify({ salesId: Number(draft.salesId), reason: draft.reason || "管理员分配" }) });
+      const response = await fetch(`${CRM_ENDPOINT}/admin/leads/${leadId}/assign`, { method: "POST", headers: { "content-type": "application/json", authorization: `Bearer ${adminToken}` }, body: JSON.stringify({ salesId: Number(draft.salesId), reason: draft.reason || "管理员分配" }) });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.message || "客户分配失败。");
-      await load(password);
+      await load(adminToken, { silent: true });
     } catch (error) {
       setMessage(error.message);
     }
+  };
+
+  const batchAssign = async () => {
+    if (!selectedLeadIds.length) { setMessage("请先勾选客户。"); return; }
+    try {
+      const result = await adminRequest("/admin/leads/batch-assign", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ customerIds: selectedLeadIds, salesId: Number(batchAssignment.salesId), reason: batchAssignment.reason }) });
+      setSelectedLeadIds([]);
+      setBatchAssignment({ salesId: "", reason: "" });
+      await load(adminToken, { silent: true });
+      setMessage(`批量分配完成：${result.updated} 位客户。`);
+    } catch (error) { setMessage(error.message); }
+  };
+
+  const previewImport = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (file.size > 1_048_576) { setMessage("CSV 文件不能超过 1 MB。"); return; }
+    const rows = parseCsv(await file.text()).slice(0, 500);
+    try {
+      const result = await adminRequest("/admin/imports/customers", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ mode: "preview", filename: file.name, rows }) });
+      setImportState({ filename: file.name, rows, preview: result.preview || [], summary: result.summary || null });
+      setMessage("导入预览已生成，请确认后执行。");
+    } catch (error) { setMessage(error.message); }
+  };
+
+  const commitImport = async () => {
+    try {
+      const result = await adminRequest("/admin/imports/customers", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ mode: "commit", filename: importState.filename, rows: importState.rows }) });
+      setImportState({ filename: "", rows: [], preview: [], summary: null });
+      await load(adminToken, { silent: true });
+      setMessage(`导入完成：新增 ${result.imported} 位客户，冲突数据已跳过。`);
+    } catch (error) { setMessage(error.message); }
+  };
+
+  const mergeSelectedLeads = async () => {
+    const masterId = Number(mergeState.masterId);
+    const duplicateIds = selectedLeadIds.filter((id) => id !== masterId);
+    if (!masterId || !duplicateIds.length || !mergeState.reason) { setMessage("请选择至少两位同手机号客户、主客户并填写合并原因。"); return; }
+    if (!globalThis.confirm("客户合并后重复记录将被软合并并从列表隐藏，是否确认？")) return;
+    try {
+      const result = await adminRequest("/admin/leads/merge", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ masterId, duplicateIds, reason: mergeState.reason }) });
+      setSelectedLeadIds([]);
+      setMergeState({ masterId: "", reason: "" });
+      await load(adminToken, { silent: true });
+      setMessage(`已合并 ${result.merged} 条重复客户记录。`);
+    } catch (error) { setMessage(error.message); }
   };
 
   const normalizedSalesSearch = salesSearch.trim().toLowerCase();
@@ -1147,39 +1359,70 @@ function CrmAdmin() {
     || person.display_name.toLowerCase().includes(normalizedAssignmentSearch)
     || person.login_name.toLowerCase().includes(normalizedAssignmentSearch)));
 
-  const exportSales = () => downloadCsv(`卓能河畔轩-销售账号-${new Date().toISOString().slice(0, 10)}.csv`,
-    ["销售姓名", "登录手机号／历史登录名", "邀请码", "官方邀请链接", "状态", "创建时间"],
-    filteredSales.map((person) => [person.display_name, person.login_name, person.invite_code, person.invite_url || "", person.active ? "启用" : "停用", person.created_at || ""]));
-  const exportLeads = () => downloadCsv(`卓能河畔轩-客户归属-${new Date().toISOString().slice(0, 10)}.csv`,
-    ["客户姓名", "手机号", "状态", "当前归属", "最近咨询", "最近跟进", "最近跟进备注"],
-    filteredLeads.map((lead) => [lead.name, lead.phone, crmStatuses.find(([value]) => value === lead.status)?.[1] || lead.status, lead.sales_name || "公共客户池", lead.last_consulted_at || "", lead.last_followup_at || "", lead.latest_note || ""]));
+  const downloadAdminCsv = async (type) => {
+    setMessage("");
+    const params = new URLSearchParams();
+    if (type === "sales" && salesSearch.trim()) params.set("q", salesSearch.trim());
+    if (type === "leads" && leadSearch.trim()) params.set("q", leadSearch.trim());
+    if (type === "leads" && leadStatus) params.set("status", leadStatus);
+    const response = await fetch(`${CRM_ENDPOINT}/admin/exports/${type}.csv?${params}`, { headers: { authorization: `Bearer ${adminToken}` } });
+    if (!response.ok) {
+      const result = await response.json().catch(() => ({}));
+      setMessage(result.message || "CSV 下载失败。");
+      return;
+    }
+    const url = URL.createObjectURL(await response.blob());
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `卓能河畔轩-${type === "sales" ? "销售账号" : "客户归属"}-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1_000);
+  };
+  const exportSales = () => downloadAdminCsv("sales");
+  const exportLeads = () => downloadAdminCsv("leads");
 
-  if (["loading", "login", "submitting", "error"].includes(status)) {
-    return <main className="admin-login-page"><section className="admin-login-card"><p>CHEUK NANG RIVERSIDE</p><h1>CRM 管理后台</h1><span>总管理员可以创建销售账号、查看公共客户池并调整客户归属。</span>{status === "loading" ? <div className="admin-loading">正在连接 CRM 数据库…</div> : <form onSubmit={login}><label><span>管理员密码</span><input type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" required autoFocus /></label>{message && <strong role="alert">{message}</strong>}<button type="submit" disabled={status === "submitting"}>{status === "submitting" ? "正在登录" : "进入 CRM"}</button></form>}</section></main>;
+  if (["checking", "loading"].includes(status)) return <main className="admin-login-page"><section className="admin-login-card"><p>CHEUK NANG RIVERSIDE</p><h1>CRM 管理后台</h1><span>正在安全连接具名管理员系统。</span><div className="admin-loading">正在连接 CRM 数据库…</div></section></main>;
+
+  if (status === "bootstrap") {
+    return <main className="admin-login-page"><section className="admin-login-card"><p>FIRST ADMIN</p><h1>初始化超级管理员</h1><span>使用现有共享管理员密码完成一次初始化。成功后，共享密码将不再用于后台登录。</span><form onSubmit={bootstrapAdminAccount}><label><span>现有共享管理员密码</span><input type="password" value={bootstrapForm.bootstrapPassword} onChange={(event) => setBootstrapForm({ ...bootstrapForm, bootstrapPassword: event.target.value })} required /></label><label><span>管理员姓名</span><input value={bootstrapForm.displayName} onChange={(event) => setBootstrapForm({ ...bootstrapForm, displayName: event.target.value })} required /></label><label><span>登录手机号</span><input type="tel" inputMode="numeric" value={bootstrapForm.loginPhone} onChange={(event) => setBootstrapForm({ ...bootstrapForm, loginPhone: event.target.value.replace(/\D/g, "").slice(0, 11) })} required /></label><label><span>新管理员密码</span><input type="password" minLength="10" value={bootstrapForm.password} onChange={(event) => setBootstrapForm({ ...bootstrapForm, password: event.target.value })} required /></label>{message && <strong role="alert">{message}</strong>}<button type="submit" disabled={authSubmitting}>{authSubmitting ? "正在初始化" : "创建超级管理员"}</button></form></section></main>;
+  }
+
+  if (status === "change-password") {
+    return <main className="admin-login-page"><section className="admin-login-card"><p>SECURITY UPDATE</p><h1>修改临时密码</h1><span>首次登录或密码重置后，必须设置新的管理员密码。</span><form onSubmit={changeAdminPassword}><label><span>当前临时密码</span><input type="password" value={passwordForm.currentPassword} onChange={(event) => setPasswordForm({ ...passwordForm, currentPassword: event.target.value })} required /></label><label><span>新密码</span><input type="password" minLength="10" value={passwordForm.nextPassword} onChange={(event) => setPasswordForm({ ...passwordForm, nextPassword: event.target.value })} required /></label>{message && <strong role="alert">{message}</strong>}<button type="submit">更新密码</button></form></section></main>;
+  }
+
+  if (["login", "error"].includes(status)) {
+    return <main className="admin-login-page"><section className="admin-login-card"><p>CHEUK NANG RIVERSIDE</p><h1>CRM 管理后台</h1><span>具名管理员请使用手机号和密码登录。</span><form onSubmit={login}><label><span>管理员手机号</span><input type="tel" inputMode="numeric" value={loginForm.loginPhone} onChange={(event) => setLoginForm({ ...loginForm, loginPhone: event.target.value.replace(/\D/g, "").slice(0, 11) })} autoComplete="username" required autoFocus /></label><label><span>管理员密码</span><input type="password" value={loginForm.password} onChange={(event) => setLoginForm({ ...loginForm, password: event.target.value })} autoComplete="current-password" required /></label>{message && <strong role="alert">{message}</strong>}<button type="submit" disabled={authSubmitting}>{authSubmitting ? "正在登录" : "进入 CRM"}</button></form></section></main>;
   }
 
   const salesView = (
     <section className="crm-panel crm-admin-view">
-      <div className="crm-view-header"><div><p>SALES ACCOUNTS</p><h2>创建销售账号</h2><span>新账号统一使用中国大陆手机号登录；历史账号暂保留原登录名。</span></div><button type="button" onClick={exportSales}>下载销售 CSV</button></div>
-      <div className="crm-filter-bar"><input type="search" value={salesSearch} onChange={(event) => setSalesSearch(event.target.value)} placeholder="搜索销售姓名或登录手机号" /><span>{filteredSales.length} 位销售</span></div>
-      <form className="crm-form" onSubmit={createSales}><input value={newSales.displayName} onChange={(event) => setNewSales({ ...newSales, displayName: event.target.value })} placeholder="销售姓名" required /><input type="tel" inputMode="numeric" pattern="1[3-9][0-9]{9}" maxLength="11" value={newSales.loginName} onChange={(event) => setNewSales({ ...newSales, loginName: event.target.value.replace(/\D/g, "").slice(0, 11) })} placeholder="登录手机号" required /><input value={newSales.inviteCode} onChange={(event) => setNewSales({ ...newSales, inviteCode: event.target.value })} placeholder="邀请码（留空自动生成）" /><input type="password" value={newSales.password} onChange={(event) => setNewSales({ ...newSales, password: event.target.value })} placeholder="初始密码，至少 10 位" required /><button type="submit">创建账号</button></form>
-      <div className="admin-table-wrap"><table className="crm-sales-table"><thead><tr><th>销售</th><th>登录手机号／历史登录名</th><th>邀请码</th><th>官方邀请链接</th></tr></thead><tbody>{filteredSales.length ? filteredSales.map((person) => <tr key={person.id}><td>{person.display_name}</td><td>{person.login_name}</td><td>{person.invite_code}</td><td><code>{person.invite_url || "待配置邀请签名密钥"}</code></td></tr>) : <tr><td colSpan="4" className="crm-table-empty">没有匹配的销售账号</td></tr>}</tbody></table></div>
+      <div className="crm-view-header"><div><p>SALES ACCOUNTS</p><h2>创建销售账号</h2><span>新账号统一使用中国大陆手机号登录；历史账号暂保留原登录名。</span></div>{admin?.permissions?.some((permission) => ["export_full", "export_masked"].includes(permission)) && <button type="button" onClick={exportSales}>下载销售 CSV</button>}</div>
+      <div className="crm-filter-bar"><input type="search" value={salesSearch} onChange={(event) => setSalesSearch(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") load(adminToken, { silent: true }); }} placeholder="搜索销售姓名或登录手机号" /><button type="button" onClick={() => load(adminToken, { silent: true })}>搜索</button><span>共 {salesTotal} 位销售</span></div>
+      {admin?.permissions?.includes("sales_manage") && <form className="crm-form" onSubmit={createSales}><input value={newSales.displayName} onChange={(event) => setNewSales({ ...newSales, displayName: event.target.value })} placeholder="销售姓名" required /><input type="tel" inputMode="numeric" pattern="1[3-9][0-9]{9}" maxLength="11" value={newSales.loginName} onChange={(event) => setNewSales({ ...newSales, loginName: event.target.value.replace(/\D/g, "").slice(0, 11) })} placeholder="登录手机号" required /><input value={newSales.inviteCode} onChange={(event) => setNewSales({ ...newSales, inviteCode: event.target.value })} placeholder="邀请码（留空自动生成）" /><input type="password" value={newSales.password} onChange={(event) => setNewSales({ ...newSales, password: event.target.value })} placeholder="初始密码，至少 10 位" required /><button type="submit">创建账号</button></form>}
+      <div className="admin-table-wrap"><table className="crm-sales-table"><thead><tr><th>销售</th><th>登录手机号／历史登录名</th><th>邀请码</th><th>状态</th><th>官方邀请链接</th><th>账号操作</th></tr></thead><tbody>{filteredSales.length ? filteredSales.map((person) => <tr key={person.id}><td>{person.display_name}</td><td>{person.login_name}</td><td>{person.invite_code}</td><td>{person.active ? "启用" : "停用"}{person.must_change_password ? " · 待改密" : ""}</td><td><code>{person.invite_url || "待配置邀请签名密钥"}</code></td><td>{admin?.permissions?.includes("sales_manage") ? <div className="crm-row-actions"><button type="button" onClick={() => changeSalesStatus(person)}>{person.active ? "停用" : "恢复"}</button><button type="button" onClick={() => changeSalesPhone(person)}>改手机号</button><button type="button" onClick={() => resetSalesPassword(person)}>重置密码</button></div> : "—"}</td></tr>) : <tr><td colSpan="6" className="crm-table-empty">没有匹配的销售账号</td></tr>}</tbody></table></div>{salesNextCursor && <button className="crm-load-more" type="button" onClick={loadMoreSales}>加载更多销售</button>}
+      {admin?.permissions?.includes("admin_manage") && <section className="crm-subsection"><div className="crm-subsection-heading"><div><p>ADMIN ACCOUNTS</p><h2>具名管理员</h2></div></div><form className="crm-form crm-admin-form" onSubmit={createNamedAdmin}><input value={newAdmin.displayName} onChange={(event) => setNewAdmin({ ...newAdmin, displayName: event.target.value })} placeholder="管理员姓名" required /><input type="tel" inputMode="numeric" value={newAdmin.loginPhone} onChange={(event) => setNewAdmin({ ...newAdmin, loginPhone: event.target.value.replace(/\D/g, "").slice(0, 11) })} placeholder="登录手机号" required /><select value={newAdmin.role} onChange={(event) => setNewAdmin({ ...newAdmin, role: event.target.value })}><option value="viewer">只读 viewer</option><option value="operator">运营 operator</option><option value="super_admin">超级管理员</option></select><input type="password" minLength="10" value={newAdmin.password} onChange={(event) => setNewAdmin({ ...newAdmin, password: event.target.value })} placeholder="临时密码，至少10位" required /><button type="submit">创建管理员</button></form><div className="admin-table-wrap"><table><thead><tr><th>管理员</th><th>手机号</th><th>角色</th><th>状态</th><th>最近登录</th></tr></thead><tbody>{admins.map((person) => <tr key={person.id}><td>{person.display_name}</td><td>{person.login_phone}</td><td>{person.role}</td><td>{person.active ? "启用" : "停用"}</td><td>{person.last_login_at || "尚未登录"}</td></tr>)}</tbody></table></div></section>}
+      {admin?.permissions?.includes("audit") && <section className="crm-subsection"><div className="crm-subsection-heading"><div><p>AUDIT LOG</p><h2>最近管理操作</h2></div></div><div className="admin-table-wrap"><table><thead><tr><th>时间</th><th>管理员</th><th>操作</th><th>原因</th><th>请求编号</th></tr></thead><tbody>{auditLogs.map((log) => <tr key={log.id}><td>{log.created_at}</td><td>{log.admin_name || log.actor_type}</td><td>{log.action}</td><td>{log.reason || "—"}</td><td><code>{log.request_id}</code></td></tr>)}</tbody></table></div></section>}
     </section>
   );
 
   const leadsView = (
     <section className="crm-panel crm-admin-view crm-admin-leads-panel">
-      <div className="crm-view-header"><div><p>LEAD OWNERSHIP</p><h2>客户归属与公共池</h2><span>搜索客户并将其分配或转交给指定销售。</span></div><button type="button" onClick={exportLeads}>下载客户 CSV</button></div>
-      <div className="crm-filter-bar crm-lead-filters"><input type="search" value={leadSearch} onChange={(event) => setLeadSearch(event.target.value)} placeholder="搜索客户姓名或手机号" /><select value={leadStatus} onChange={(event) => setLeadStatus(event.target.value)}><option value="">全部客户状态</option>{crmStatuses.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select><input type="search" value={assignmentSalesSearch} onChange={(event) => setAssignmentSalesSearch(event.target.value)} placeholder="搜索可分配销售姓名或手机号" /><span>{filteredLeads.length} 位客户</span></div>
-      <div className="admin-table-wrap"><table className="crm-admin-leads-table"><thead><tr><th>客户</th><th>手机号</th><th>状态</th><th>当前归属</th><th>分配／转交</th></tr></thead><tbody>{filteredLeads.length ? filteredLeads.map((lead) => { const selectedSalesId = Number(assignments[lead.id]?.salesId || 0); const salesOptions = sales.filter((person) => person.active && (assignableSales.some((match) => match.id === person.id) || person.id === selectedSalesId)); return <tr key={lead.id}><td>{lead.name}</td><td>{lead.phone}</td><td>{crmStatuses.find(([value]) => value === lead.status)?.[1] || lead.status}</td><td>{lead.sales_name || "公共客户池"}</td><td><div className="crm-assignment"><select value={assignments[lead.id]?.salesId || ""} onChange={(event) => setAssignments({ ...assignments, [lead.id]: { ...assignments[lead.id], salesId: event.target.value } })}><option value="">{salesOptions.length ? "选择销售" : "无匹配销售"}</option>{salesOptions.map((person) => <option key={person.id} value={person.id}>{person.display_name} · {person.login_name}</option>)}</select><input value={assignments[lead.id]?.reason || ""} onChange={(event) => setAssignments({ ...assignments, [lead.id]: { ...assignments[lead.id], reason: event.target.value } })} placeholder="调整原因" /><button type="button" onClick={() => assignLead(lead.id)}>确认</button></div></td></tr>; }) : <tr><td colSpan="5" className="crm-table-empty">没有匹配的客户</td></tr>}</tbody></table></div>
+      <div className="crm-view-header"><div><p>LEAD OWNERSHIP</p><h2>客户归属与公共池</h2><span>搜索客户并将其分配或转交给指定销售。</span></div>{admin?.permissions?.some((permission) => ["export_full", "export_masked"].includes(permission)) && <button type="button" onClick={exportLeads}>下载客户 CSV</button>}</div>
+      <div className="crm-filter-bar crm-lead-filters"><input type="search" value={leadSearch} onChange={(event) => setLeadSearch(event.target.value)} placeholder="搜索客户姓名或手机号" /><select value={leadStatus} onChange={(event) => setLeadStatus(event.target.value)}><option value="">全部客户状态</option>{crmStatuses.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select><input type="search" value={assignmentSalesSearch} onChange={(event) => setAssignmentSalesSearch(event.target.value)} placeholder="搜索可分配销售姓名或手机号" /><button type="button" onClick={() => load(adminToken, { silent: true })}>搜索客户</button><span>共 {leadsTotal} 位客户</span></div>
+      {admin?.permissions?.includes("lead_assign") && selectedLeadIds.length > 0 && <div className="crm-batch-bar"><strong>已选 {selectedLeadIds.length} 位客户</strong><select value={batchAssignment.salesId} onChange={(event) => setBatchAssignment({ ...batchAssignment, salesId: event.target.value })}><option value="">目标销售</option>{sales.filter((person) => person.active).map((person) => <option key={person.id} value={person.id}>{person.display_name} · {person.login_name}</option>)}</select><input value={batchAssignment.reason} onChange={(event) => setBatchAssignment({ ...batchAssignment, reason: event.target.value })} placeholder="批量分配原因" /><button type="button" onClick={batchAssign}>批量分配</button>{admin?.permissions?.includes("lead_merge") && <><select value={mergeState.masterId} onChange={(event) => setMergeState({ ...mergeState, masterId: event.target.value })}><option value="">选择主客户</option>{selectedLeadIds.map((id) => { const lead = leads.find((item) => item.id === id); return <option key={id} value={id}>{lead?.name} · {lead?.phone}</option>; })}</select><input value={mergeState.reason} onChange={(event) => setMergeState({ ...mergeState, reason: event.target.value })} placeholder="客户合并原因" /><button type="button" onClick={mergeSelectedLeads}>合并重复客户</button></>}</div>}
+      {admin?.permissions?.includes("import") && <div className="crm-import-panel"><label><span>批量导入客户 CSV</span><input type="file" accept=".csv,text/csv" onChange={previewImport} /></label>{importState.summary && <div><strong>预览：新增 {importState.summary.insert}，跳过 {importState.summary.skip}，错误 {importState.summary.error}</strong><button type="button" onClick={commitImport} disabled={!importState.summary.insert}>确认导入</button></div>}{importState.preview.length > 0 && <details><summary>查看逐行校验结果</summary><div className="admin-table-wrap"><table><thead><tr><th>行号</th><th>客户</th><th>手机号</th><th>处理</th><th>说明</th></tr></thead><tbody>{importState.preview.slice(0, 50).map((row) => <tr key={row.index}><td>{row.index}</td><td>{row.name || "—"}</td><td>{row.phone || "—"}</td><td>{row.action}</td><td>{row.errors.join("；") || "可导入"}</td></tr>)}</tbody></table></div></details>}</div>}
+      <div className="admin-table-wrap"><table className="crm-admin-leads-table"><thead><tr><th><input type="checkbox" aria-label="选择当前页全部客户" checked={filteredLeads.length > 0 && filteredLeads.every((lead) => selectedLeadIds.includes(lead.id))} onChange={(event) => setSelectedLeadIds(event.target.checked ? filteredLeads.map((lead) => lead.id) : [])} /></th><th>客户</th><th>手机号</th><th>状态</th><th>当前归属</th><th>分配／转交</th></tr></thead><tbody>{filteredLeads.length ? filteredLeads.map((lead) => { const selectedSalesId = Number(assignments[lead.id]?.salesId || 0); const salesOptions = sales.filter((person) => person.active && (assignableSales.some((match) => match.id === person.id) || person.id === selectedSalesId)); return <tr key={lead.id}><td><input type="checkbox" aria-label={`选择客户 ${lead.name}`} checked={selectedLeadIds.includes(lead.id)} onChange={(event) => setSelectedLeadIds(event.target.checked ? [...selectedLeadIds, lead.id] : selectedLeadIds.filter((id) => id !== lead.id))} /></td><td>{lead.name}</td><td>{lead.phone}</td><td>{crmStatuses.find(([value]) => value === lead.status)?.[1] || lead.status}</td><td>{lead.sales_name || "公共客户池"}</td><td>{admin?.permissions?.includes("lead_assign") ? <div className="crm-assignment"><select value={assignments[lead.id]?.salesId || ""} onChange={(event) => setAssignments({ ...assignments, [lead.id]: { ...assignments[lead.id], salesId: event.target.value } })}><option value="">{salesOptions.length ? "选择销售" : "无匹配销售"}</option>{salesOptions.map((person) => <option key={person.id} value={person.id}>{person.display_name} · {person.login_name}</option>)}</select><input value={assignments[lead.id]?.reason || ""} onChange={(event) => setAssignments({ ...assignments, [lead.id]: { ...assignments[lead.id], reason: event.target.value } })} placeholder="调整原因" /><button type="button" onClick={() => assignLead(lead.id)}>确认</button></div> : "无修改权限"}</td></tr>; }) : <tr><td colSpan="6" className="crm-table-empty">没有匹配的客户</td></tr>}</tbody></table></div>{leadsNextCursor && <button className="crm-load-more" type="button" onClick={loadMoreLeads}>加载更多客户</button>}
     </section>
   );
 
   return (
     <main className="admin-page">
-      <header className="admin-topbar"><Brand light /><button type="button" onClick={() => { setPassword(""); setStatus("login"); }}>退出登录</button></header>
+      <header className="admin-topbar"><Brand light /><button type="button" onClick={() => { setAdminToken(""); setAdmin(null); setStatus("login"); }}>退出登录</button></header>
       <section className="admin-shell crm-admin-shell">
-        <div className="admin-heading"><div><p>CRM ADMIN</p><h1>销售与客户归属</h1><span>邀请码只记录客户来源；销售登录后只能查看自己名下客户。</span></div><div className="admin-actions"><button type="button" onClick={() => load(password)}>刷新</button></div></div>
+        <div className="admin-heading"><div><p>CRM ADMIN · {admin?.role}</p><h1>销售与客户归属</h1><span>{admin?.displayName}，邀请码只记录客户来源；销售登录后只能查看自己名下客户。</span></div><div className="admin-actions"><button type="button" onClick={() => load(adminToken, { silent: true })}>刷新</button></div></div>
         {message && <p className="crm-message" role="status">{message}</p>}
         <div className="crm-admin-workspace">
           <aside className="crm-admin-nav" aria-label="CRM 管理页面">
@@ -1205,6 +1448,12 @@ function SalesCrm() {
   const [qrCardUrl, setQrCardUrl] = useState("");
   const [qrMessage, setQrMessage] = useState("");
   const [savingLeadId, setSavingLeadId] = useState(null);
+  const [passwordForm, setPasswordForm] = useState({ currentPassword: "", nextPassword: "" });
+  const [reminderFilter, setReminderFilter] = useState("");
+  const [leadSearch, setLeadSearch] = useState("");
+  const [leadsTotal, setLeadsTotal] = useState(0);
+  const [leadsNextCursor, setLeadsNextCursor] = useState(null);
+  const [timeline, setTimeline] = useState({ lead: null, items: [], nextCursor: null });
 
   const load = useCallback(async (token, { silent = false } = {}) => {
     if (!token) { setStatus("login"); return; }
@@ -1214,7 +1463,10 @@ function SalesCrm() {
     }
     try {
       const headers = { authorization: `Bearer ${token}` };
-      const [meResponse, leadsResponse] = await Promise.all([fetch(`${CRM_ENDPOINT}/me`, { headers }), fetch(`${CRM_ENDPOINT}/leads`, { headers })]);
+      const params = new URLSearchParams({ page_size: "100" });
+      if (reminderFilter) params.set("reminder", reminderFilter);
+      if (leadSearch.trim()) params.set("q", leadSearch.trim());
+      const [meResponse, leadsResponse] = await Promise.all([fetch(`${CRM_ENDPOINT}/me`, { headers }), fetch(`${CRM_ENDPOINT}/leads?${params}`, { headers })]);
       if (meResponse.status === 401 || leadsResponse.status === 401) { setStatus("login"); return; }
       const me = await meResponse.json().catch(() => ({}));
       const data = await leadsResponse.json().catch(() => ({}));
@@ -1223,13 +1475,15 @@ function SalesCrm() {
       setSales(me.sales);
       const nextLeads = data.leads || [];
       setLeads(nextLeads);
-      setDrafts(Object.fromEntries(nextLeads.map((lead) => [lead.id, { status: lead.status, note: lead.latest_note || "" }])));
-      setStatus("ready");
+      setLeadsTotal(Number(data.total || 0));
+      setLeadsNextCursor(data.next_cursor || null);
+      setDrafts(Object.fromEntries(nextLeads.map((lead) => [lead.id, { status: lead.status, note: lead.latest_note || "", nextFollowupAt: lead.next_followup_at ? lead.next_followup_at.replace(" ", "T").slice(0, 16) : "" }])));
+      setStatus(me.sales?.mustChangePassword ? "change-password" : "ready");
     } catch (error) {
       if (!silent) setStatus("error");
       setMessage(error.message);
     }
-  }, []);
+  }, [reminderFilter, leadSearch]);
 
   useEffect(() => {
     let cancelled = false;
@@ -1251,8 +1505,40 @@ function SalesCrm() {
       if (!response.ok) throw new Error(result.message || "登录失败。");
       setPassword("");
       setSalesToken(result.token);
-      await load(result.token);
+      if (result.sales?.mustChangePassword) {
+        setSales(result.sales);
+        setStatus("change-password");
+      } else await load(result.token);
     } catch (error) { setStatus("login"); setMessage(error.message); }
+  };
+
+  const changeSalesPassword = async (event) => {
+    event.preventDefault();
+    const response = await fetch(`${CRM_ENDPOINT}/change-password`, { method: "POST", headers: { "content-type": "application/json", authorization: `Bearer ${salesToken}` }, body: JSON.stringify(passwordForm) });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) { setMessage(result.message || "密码修改失败。"); return; }
+    setPasswordForm({ currentPassword: "", nextPassword: "" });
+    await load(salesToken);
+    setMessage("密码已更新。");
+  };
+
+  const loadMoreSalesLeads = async () => {
+    if (!leadsNextCursor) return;
+    const params = new URLSearchParams({ page_size: "100", cursor: leadsNextCursor });
+    if (reminderFilter) params.set("reminder", reminderFilter);
+    if (leadSearch.trim()) params.set("q", leadSearch.trim());
+    const response = await fetch(`${CRM_ENDPOINT}/leads?${params}`, { headers: { authorization: `Bearer ${salesToken}` } });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) { setMessage(result.message || "更多客户加载失败。"); return; }
+    setLeads((current) => [...current, ...(result.leads || [])]);
+    setLeadsNextCursor(result.next_cursor || null);
+  };
+
+  const openTimeline = async (lead, cursor = "") => {
+    const response = await fetch(`${CRM_ENDPOINT}/leads/${lead.id}/followups${cursor ? `?cursor=${cursor}` : ""}`, { headers: { authorization: `Bearer ${salesToken}` } });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) { setMessage(result.message || "跟进历史加载失败。"); return; }
+    setTimeline((current) => ({ lead, items: cursor ? [...current.items, ...(result.items || [])] : result.items || [], nextCursor: result.nextCursor || null }));
   };
 
   const saveFollowup = async (lead) => {
@@ -1281,11 +1567,29 @@ function SalesCrm() {
     link.remove();
   };
 
+  if (status === "change-password") return <main className="admin-login-page"><section className="admin-login-card"><p>SECURITY UPDATE</p><h1>修改临时密码</h1><span>管理员重置密码后，首次登录必须设置新密码。</span><form onSubmit={changeSalesPassword}><label><span>当前临时密码</span><input type="password" value={passwordForm.currentPassword} onChange={(event) => setPasswordForm({ ...passwordForm, currentPassword: event.target.value })} required /></label><label><span>新密码</span><input type="password" minLength="10" value={passwordForm.nextPassword} onChange={(event) => setPasswordForm({ ...passwordForm, nextPassword: event.target.value })} required /></label>{message && <strong role="alert">{message}</strong>}<button type="submit">更新密码</button></form></section></main>;
+
   if (["loading", "login", "submitting", "error"].includes(status)) {
-    return <main className="admin-login-page"><section className="admin-login-card"><p>CHEUK NANG RIVERSIDE</p><h1>销售客户后台</h1><span>仅展示分配给当前账号的客户；邀请码不能用于登录。</span>{status === "loading" ? <div className="admin-loading">正在连接 CRM 数据库…</div> : <form onSubmit={login}><label><span>登录名</span><input value={loginName} onChange={(event) => setLoginName(event.target.value)} autoComplete="username" required /></label><label><span>密码</span><input type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" required /></label>{message && <strong role="alert">{message}</strong>}<button type="submit" disabled={status === "submitting"}>{status === "submitting" ? "正在登录" : "进入客户后台"}</button></form>}</section></main>;
+    return <main className="admin-login-page"><section className="admin-login-card"><p>CHEUK NANG RIVERSIDE</p><h1>销售客户后台</h1><span>仅展示分配给当前账号的客户；邀请码不能用于登录。</span>{status === "loading" ? <div className="admin-loading">正在连接 CRM 数据库…</div> : <form onSubmit={login}><label><span>登录手机号／历史登录名</span><input value={loginName} onChange={(event) => setLoginName(event.target.value)} autoComplete="username" required /></label><label><span>密码</span><input type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" required /></label>{message && <strong role="alert">{message}</strong>}<button type="submit" disabled={status === "submitting"}>{status === "submitting" ? "正在登录" : "进入客户后台"}</button></form>}</section></main>;
   }
 
-  return <main className="admin-page"><header className="admin-topbar"><Brand light /><button type="button" onClick={() => { setSalesToken(""); setStatus("login"); }}>退出登录</button></header><section className="admin-shell"><div className="admin-heading"><div><p>SALES CRM</p><h1>{sales?.displayName}的客户</h1><span>邀请码只用于识别来源，不可作为后台登录凭证。</span></div><div className="admin-actions"><button type="button" onClick={() => load(salesToken, { silent: true })}>刷新</button></div></div><section className="crm-panel crm-qr-panel"><div><h2>我的官方专属二维码</h2><p>请将此二维码或官方专属链接分享给客户。客户扫码后提交资料，系统才会自动归属到你名下。</p>{sales?.inviteUrl ? <code>{sales.inviteUrl}</code> : <strong>邀请签名尚未配置，暂不能生成可用二维码。</strong>}<div className="admin-actions"><button type="button" onClick={downloadQrCard} disabled={!qrCardUrl}>下载专属二维码</button></div>{qrMessage && <p className="crm-message" role="status">{qrMessage}</p>}</div>{qrCardUrl && <img src={qrCardUrl} alt={`${sales.displayName}的卓能河畔轩官方专属二维码`} />}</section>{message && <p className="crm-message" role="status">{message}</p>}<section className="crm-panel crm-leads-panel"><div className="crm-leads-heading"><div><p>MY CLIENTS</p><h2>客户跟进</h2></div><span>{leads.length} 位客户</span></div>{leads.length ? <div className="crm-leads-grid">{leads.map((lead) => { const draft = drafts[lead.id] || { status: lead.status, note: lead.latest_note || "" }; const currentStatus = crmStatuses.find(([value]) => value === lead.status)?.[1] || lead.status; const isSaving = savingLeadId === lead.id; return <article className="crm-lead-card" key={lead.id} aria-busy={isSaving}><header><div><small>客户</small><h3>{lead.name}</h3></div><a href={`tel:${lead.phone}`}>{lead.phone}</a></header><div className="crm-lead-summary"><span><small>当前状态</small><strong>{currentStatus}</strong></span><span><small>最近跟进</small><strong>{lead.last_followup_at || "暂无"}</strong></span></div><div className="crm-lead-controls"><label><span>跟进状态</span><select value={draft.status} onChange={(event) => setDrafts({ ...drafts, [lead.id]: { ...draft, status: event.target.value } })}>{crmStatuses.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label><label className="crm-lead-note"><span>跟进备注</span><textarea rows="4" value={draft.note} onChange={(event) => setDrafts({ ...drafts, [lead.id]: { ...draft, note: event.target.value } })} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey && !event.repeat && !event.nativeEvent.isComposing) { event.preventDefault(); saveFollowup(lead); } }} placeholder="填写备注后按回车自动保存" /><small>{isSaving ? "正在保存…" : "回车自动保存 · Shift+回车换行"}</small></label></div></article>; })}</div> : <p className="crm-leads-empty">暂时还没有归属到你名下的客户。</p>}</section></section></main>;
+  return (
+    <main className="admin-page">
+      <header className="admin-topbar"><Brand light /><button type="button" onClick={() => { setSalesToken(""); setStatus("login"); }}>退出登录</button></header>
+      <section className="admin-shell">
+        <div className="admin-heading"><div><p>SALES CRM</p><h1>{sales?.displayName}的客户</h1><span>邀请码只用于识别来源，不可作为后台登录凭证。</span></div><div className="admin-actions"><button type="button" onClick={() => load(salesToken, { silent: true })}>刷新</button></div></div>
+        <section className="crm-panel crm-qr-panel"><div><h2>我的官方专属二维码</h2><p>请将此二维码或官方专属链接分享给客户。客户扫码后提交资料，系统才会自动归属到你名下。</p>{sales?.inviteUrl ? <code>{sales.inviteUrl}</code> : <strong>邀请签名尚未配置，暂不能生成可用二维码。</strong>}<div className="admin-actions"><button type="button" onClick={downloadQrCard} disabled={!qrCardUrl}>下载专属二维码</button></div>{qrMessage && <p className="crm-message" role="status">{qrMessage}</p>}</div>{qrCardUrl && <img src={qrCardUrl} alt={`${sales.displayName}的卓能河畔轩官方专属二维码`} />}</section>
+        {message && <p className="crm-message" role="status">{message}</p>}
+        <section className="crm-panel crm-leads-panel">
+          <div className="crm-leads-heading"><div><p>MY CLIENTS</p><h2>客户跟进</h2></div><span>共 {leadsTotal} 位客户</span></div>
+          <div className="crm-filter-bar crm-sales-lead-filters"><input type="search" value={leadSearch} onChange={(event) => setLeadSearch(event.target.value)} placeholder="搜索客户姓名或手机号" /><select value={reminderFilter} onChange={(event) => setReminderFilter(event.target.value)}><option value="">全部提醒</option><option value="overdue">已逾期</option><option value="today">今天待跟进</option><option value="week">未来7天</option><option value="none">暂无计划</option></select><button type="button" onClick={() => load(salesToken, { silent: true })}>搜索</button></div>
+          {leads.length ? <div className="crm-leads-grid">{leads.map((lead) => { const draft = drafts[lead.id] || { status: lead.status, note: lead.latest_note || "", nextFollowupAt: "" }; const currentStatus = crmStatuses.find(([value]) => value === lead.status)?.[1] || lead.status; const isSaving = savingLeadId === lead.id; return <article className="crm-lead-card" key={lead.id} aria-busy={isSaving}><header><div><small>客户</small><h3>{lead.name}</h3></div><a href={`tel:${lead.phone}`}>{lead.phone}</a></header><div className="crm-lead-summary"><span><small>当前状态</small><strong>{currentStatus}</strong></span><span><small>最近跟进</small><strong>{lead.last_followup_at || "暂无"}</strong></span></div><div className="crm-lead-controls"><label><span>跟进状态</span><select value={draft.status} onChange={(event) => setDrafts({ ...drafts, [lead.id]: { ...draft, status: event.target.value } })}>{crmStatuses.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label><label><span>下次跟进</span><input type="datetime-local" value={draft.nextFollowupAt} onChange={(event) => setDrafts({ ...drafts, [lead.id]: { ...draft, nextFollowupAt: event.target.value } })} /></label><label className="crm-lead-note"><span>跟进备注</span><textarea rows="4" value={draft.note} onChange={(event) => setDrafts({ ...drafts, [lead.id]: { ...draft, note: event.target.value } })} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey && !event.repeat && !event.nativeEvent.isComposing) { event.preventDefault(); saveFollowup(lead); } }} placeholder="填写备注后按回车自动保存" /><small>{isSaving ? "正在保存…" : "回车自动保存 · Shift+回车换行"}</small></label><button className="crm-timeline-button" type="button" onClick={() => openTimeline(lead)}>跟进历史</button></div></article>; })}</div> : <p className="crm-leads-empty">暂时还没有符合条件的客户。</p>}
+          {leadsNextCursor && <button className="crm-load-more" type="button" onClick={loadMoreSalesLeads}>加载更多客户</button>}
+        </section>
+      </section>
+      {timeline.lead && <div className="crm-timeline-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setTimeline({ lead: null, items: [], nextCursor: null }); }}><section className="crm-timeline" role="dialog" aria-modal="true"><header><div><small>FOLLOW-UP HISTORY</small><h2>{timeline.lead.name}的跟进历史</h2></div><button type="button" onClick={() => setTimeline({ lead: null, items: [], nextCursor: null })}>关闭</button></header>{timeline.items.length ? <ol>{timeline.items.map((item) => <li key={item.id}><time>{item.created_at}</time><strong>{item.sales_name || "销售"} · {crmStatuses.find(([value]) => value === item.status)?.[1] || item.status}</strong><p>{item.note}</p>{item.next_followup_at && <span>下次跟进：{item.next_followup_at}</span>}</li>)}</ol> : <p className="crm-leads-empty">暂无跟进记录</p>}{timeline.nextCursor && <button className="crm-load-more" type="button" onClick={() => openTimeline(timeline.lead, timeline.nextCursor)}>加载更多历史</button>}</section></div>}
+    </main>
+  );
 }
 
 function CrmHostRedirect() {

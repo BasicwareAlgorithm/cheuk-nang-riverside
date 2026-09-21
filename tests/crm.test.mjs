@@ -124,6 +124,7 @@ test("password hashing stays within the Cloudflare Workers PBKDF2 limit", async 
 
 function createCrmApiD1() {
   const sales = [];
+  const admins = [];
   const followups = [];
   const customers = [
     { id: 1, name: "客户 A", phone: "13800138000", sales_id: 1, status: "new", last_consulted_at: "2026-09-18 10:00:00" },
@@ -136,39 +137,54 @@ function createCrmApiD1() {
       return {
         bind(...args) { values = args; return this; },
         async run() {
+          if (sql.startsWith("INSERT INTO crm_admin_accounts")) {
+            const account = { id: admins.length + 1, display_name: values[0], login_phone: values[1], password_hash: values[2], role: values[3] || "super_admin", active: 1, must_change_password: 0 };
+            admins.push(account);
+            return { success: true, meta: { last_row_id: account.id } };
+          }
+          if (sql.startsWith("UPDATE crm_admin_accounts SET last_login_at")) return { success: true };
+          if (sql.startsWith("UPDATE crm_sales_accounts SET last_login_at")) return { success: true };
           if (sql.startsWith("INSERT INTO crm_sales_accounts")) {
             const account = { id: sales.length + 1, display_name: values[0], login_name: values[1], password_hash: values[2], invite_code: values[3], active: 1, created_at: "2026-09-18 10:00:00" };
             sales.push(account);
             return { success: true, meta: { last_row_id: account.id } };
           }
           if (sql.startsWith("UPDATE crm_customers SET status")) {
-            const customer = customers.find((item) => item.id === values[1]);
+            const customer = customers.find((item) => item.id === values.at(-1));
             customer.status = values[0];
+            customer.next_followup_at = values[1];
             return { success: true };
           }
           if (sql.startsWith("INSERT INTO crm_followups")) {
-            followups.push({ id: followups.length + 1, customer_id: values[0], sales_id: values[1], status: values[2], note: values[3], created_at: "2026-09-21 18:30:00" });
+            followups.push({ id: followups.length + 1, customer_id: values[0], sales_id: values[1], status: values[2], note: values[3], next_followup_at: values[4], created_at: "2026-09-21 18:30:00" });
             return { success: true };
           }
           if (sql.startsWith("INSERT INTO crm_audit_logs")) return { success: true };
           throw new Error(`Unexpected run query: ${sql}`);
         },
         async first() {
+          if (sql.startsWith("SELECT COUNT(*) AS total FROM crm_admin_accounts")) return { total: admins.length };
+          if (sql.startsWith("SELECT id, display_name, login_phone, password_hash")) return admins.find((account) => account.login_phone === values[0]) || null;
+          if (sql.startsWith("SELECT id, display_name, login_phone, role")) return admins.find((account) => account.id === values[0]) || null;
           if (sql.startsWith("SELECT id, display_name, login_name, invite_code, password_hash")) return sales.find((account) => account.login_name === values[0]) || null;
-          if (sql.startsWith("SELECT id, display_name, login_name, invite_code, active FROM crm_sales_accounts WHERE id")) return sales.find((account) => account.id === values[0]) || null;
+          if (sql.startsWith("SELECT id, display_name, login_name, invite_code, active")) return sales.find((account) => account.id === values[0]) || null;
+          if (sql.startsWith("SELECT COUNT(*) AS total FROM crm_customers")) return { total: customers.length };
           if (sql.startsWith("SELECT id FROM crm_customers WHERE id = ? AND sales_id = ?")) return customers.find((customer) => customer.id === values[0] && customer.sales_id === values[1]) || null;
+          if (sql.startsWith("SELECT id FROM crm_customers WHERE phone")) return customers.find((customer) => customer.phone === values[0]) || null;
           throw new Error(`Unexpected first query: ${sql}`);
         },
         async all() {
           if (sql.startsWith("SELECT id FROM crm_sales_accounts LIMIT 1")) return { results: sales.slice(0, 1) };
           if (sql.startsWith("SELECT id, display_name, login_name, invite_code, active, invite_expires_at")) return { results: sales };
           if (sql.startsWith("SELECT c.id, c.name, c.phone")) {
-            const visible = values.length ? customers.filter((customer) => customer.sales_id === values[0]) : customers;
+            const visible = sql.includes("c.sales_id = ?") ? customers.filter((customer) => customer.sales_id === values[0]) : customers;
             return { results: visible.map((customer) => {
               const latest = followups.filter((followup) => followup.customer_id === customer.id).at(-1);
               return { ...customer, sales_name: sales.find((account) => account.id === customer.sales_id)?.display_name || null, latest_note: latest?.note || null, last_followup_at: latest?.created_at || null };
             }) };
           }
+          if (sql.startsWith("SELECT c.name, c.phone")) return { results: customers.map((customer) => ({ ...customer, sales_name: sales.find((account) => account.id === customer.sales_id)?.display_name || null })) };
+          if (sql.startsWith("SELECT f.id, f.customer_id")) return { results: followups.filter((followup) => followup.customer_id === values[0]).reverse() };
           throw new Error(`Unexpected all query: ${sql}`);
         },
       };
@@ -181,9 +197,23 @@ test("sales API only returns the signed-in sales person's own customers", async 
   const env = { DB, CRM_SESSION_SECRET: "crm-test-session-secret", CRM_INVITE_SECRET: "crm-invite-test-secret" };
   const isAdmin = async () => true;
 
-  const invalidLogin = await handleCrmApi(new Request("https://example.test/api/crm/admin/sales", {
+  const bootstrap = await handleCrmApi(new Request("https://example.test/api/crm/admin/bootstrap", {
     method: "POST",
     headers: { "content-type": "application/json" },
+    body: JSON.stringify({ displayName: "超级管理员", loginPhone: "13800138000", password: "admin-test-password" }),
+  }), env, isAdmin);
+  assert.equal(bootstrap.status, 201);
+  const adminLogin = await handleCrmApi(new Request("https://example.test/api/crm/admin/login", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ loginPhone: "13800138000", password: "admin-test-password" }),
+  }), env, async () => false);
+  assert.equal(adminLogin.status, 200);
+  const adminToken = (await adminLogin.json()).token;
+
+  const invalidLogin = await handleCrmApi(new Request("https://example.test/api/crm/admin/sales", {
+    method: "POST",
+    headers: { "content-type": "application/json", authorization: `Bearer ${adminToken}` },
     body: JSON.stringify({ displayName: "旧格式", loginName: "sales-a", inviteCode: "INVALID01", password: "a-long-test-password" }),
   }), env, isAdmin);
   assert.equal(invalidLogin.status, 400);
@@ -192,7 +222,7 @@ test("sales API only returns the signed-in sales person's own customers", async 
   for (const [displayName, loginName, inviteCode] of [["销售 A", "13800138001", "ALPHA2026"], ["销售 B", "13800138002", "BRAVO2026"]]) {
     const response = await handleCrmApi(new Request("https://example.test/api/crm/admin/sales", {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: { "content-type": "application/json", authorization: `Bearer ${adminToken}` },
       body: JSON.stringify({ displayName, loginName, inviteCode, password: "a-long-test-password" }),
     }), env, isAdmin);
     assert.equal(response.status, 201);
@@ -216,7 +246,7 @@ test("sales API only returns the signed-in sales person's own customers", async 
   const followup = await handleCrmApi(new Request("https://example.test/api/crm/leads/1", {
     method: "PATCH",
     headers: { cookie, "content-type": "application/json" },
-    body: JSON.stringify({ status: "contacted", note: "客户希望周末再次联系" }),
+    body: JSON.stringify({ status: "contacted", note: "客户希望周末再次联系", nextFollowupAt: "2026-09-28T10:30" }),
   }), env, async () => false);
   assert.equal(followup.status, 200);
 
@@ -226,10 +256,83 @@ test("sales API only returns the signed-in sales person's own customers", async 
   assert.equal(refreshedLead.latest_note, "客户希望周末再次联系");
   assert.equal(refreshedLead.last_followup_at, "2026-09-21 18:30:00");
 
+  const timeline = await handleCrmApi(new Request("https://example.test/api/crm/leads/1/followups", { headers: { cookie } }), env, async () => false);
+  assert.equal(timeline.status, 200);
+  const timelineBody = await timeline.json();
+  assert.equal(timelineBody.items[0].note, "客户希望周末再次联系");
+  assert.equal(timelineBody.items[0].next_followup_at, "2026-09-28 10:30:00");
+
   const otherLead = await handleCrmApi(new Request("https://example.test/api/crm/leads/2", {
     method: "PATCH",
     headers: { cookie, "content-type": "application/json" },
     body: JSON.stringify({ status: "contacted", note: "尝试越权修改" }),
   }), env, async () => false);
   assert.equal(otherLead.status, 404);
+});
+
+test("named admin roles replace shared-password access and mask phones for operators", async () => {
+  const DB = createCrmApiD1();
+  const env = { DB, CRM_SESSION_SECRET: "crm-test-session-secret", CRM_INVITE_SECRET: "crm-invite-test-secret" };
+  const bootstrap = await handleCrmApi(new Request("https://example.test/api/crm/admin/bootstrap", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ displayName: "超级管理员", loginPhone: "13800138000", password: "admin-test-password" }),
+  }), env, async () => true);
+  assert.equal(bootstrap.status, 201);
+
+  const legacyAccess = await handleCrmApi(new Request("https://example.test/api/crm/admin/leads", { headers: { "x-admin-password": "legacy" } }), env, async () => true);
+  assert.equal(legacyAccess.status, 401);
+
+  const login = await handleCrmApi(new Request("https://example.test/api/crm/admin/login", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ loginPhone: "13800138000", password: "admin-test-password" }),
+  }), env, async () => false);
+  const superToken = (await login.json()).token;
+  const createOperator = await handleCrmApi(new Request("https://example.test/api/crm/admin/admins", {
+    method: "POST",
+    headers: { "content-type": "application/json", authorization: `Bearer ${superToken}` },
+    body: JSON.stringify({ displayName: "运营管理员", loginPhone: "13900139000", role: "operator", password: "operator-password" }),
+  }), env, async () => false);
+  assert.equal(createOperator.status, 201);
+
+  const operatorLogin = await handleCrmApi(new Request("https://example.test/api/crm/admin/login", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ loginPhone: "13900139000", password: "operator-password" }),
+  }), env, async () => false);
+  const operatorToken = (await operatorLogin.json()).token;
+  const leads = await handleCrmApi(new Request("https://example.test/api/crm/admin/leads", { headers: { authorization: `Bearer ${operatorToken}` } }), env, async () => false);
+  assert.equal(leads.status, 200);
+  assert.equal((await leads.json()).leads[0].phone, "138****8000");
+
+  const operatorSalesCreate = await handleCrmApi(new Request("https://example.test/api/crm/admin/sales", {
+    method: "POST",
+    headers: { "content-type": "application/json", authorization: `Bearer ${operatorToken}` },
+    body: JSON.stringify({ displayName: "越权销售", loginName: "13700137000", password: "temporary-password" }),
+  }), env, async () => false);
+  assert.equal(operatorSalesCreate.status, 403);
+
+  const importPreview = await handleCrmApi(new Request("https://example.test/api/crm/admin/imports/customers", {
+    method: "POST",
+    headers: { "content-type": "application/json", authorization: `Bearer ${operatorToken}` },
+    body: JSON.stringify({ mode: "preview", rows: [
+      { name: "重复客户", phone: "13800138000", status: "new" },
+      { name: "新增客户", phone: "13600136000", status: "contacted" },
+    ] }),
+  }), env, async () => false);
+  assert.equal(importPreview.status, 200);
+  const previewBody = await importPreview.json();
+  assert.equal(previewBody.summary.skip, 1);
+  assert.equal(previewBody.summary.insert, 1);
+});
+
+test("operations migration adds admin roles, reminders, merges, imports and audit metadata", async () => {
+  const migration = await readFile(new URL("../migrations/0003_crm_operations.sql", import.meta.url), "utf8");
+  assert.match(migration, /CREATE TABLE IF NOT EXISTS crm_admin_accounts/);
+  assert.match(migration, /must_change_password/);
+  assert.match(migration, /next_followup_at/);
+  assert.match(migration, /merged_into_customer_id/);
+  assert.match(migration, /CREATE TABLE IF NOT EXISTS crm_import_batches/);
+  assert.match(migration, /metadata_json/);
 });

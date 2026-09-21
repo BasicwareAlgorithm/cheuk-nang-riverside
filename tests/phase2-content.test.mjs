@@ -111,12 +111,12 @@ test("admin CRM separates sales and lead workflows with search and CSV export", 
   assert.match(app, /type="tel" inputMode="numeric" pattern="1\[3-9\]\[0-9\]\{9\}"/);
   assert.match(app, /下载销售 CSV/);
   assert.match(app, /下载客户 CSV/);
-  assert.match(app, /function downloadCsv/);
+  assert.match(app, /const downloadAdminCsv = async/);
   assert.match(app, /className="crm-panel crm-admin-view crm-admin-leads-panel"/);
   assert.match(app, /className="crm-admin-leads-table"/);
   assert.match(styles, /\.crm-admin-workspace \{[^}]*grid-template-columns: 220px minmax\(0,1fr\)/);
   assert.match(styles, /\.crm-admin-leads-table \{ min-width: 1050px !important; table-layout: fixed;/);
-  assert.match(styles, /\.crm-admin-leads-table th:nth-child\(5\) \{ width: 44%; \}/);
+  assert.match(styles, /\.crm-admin-leads-table th:nth-child\(6\) \{ width: 46%; \}/);
   assert.match(styles, /\.crm-assignment \{ gap: 16px;/);
 });
 
