@@ -341,7 +341,7 @@ function Header({ solid, open, setOpen, onBooking }) {
 function Hero() {
   return (
     <section className="hero" id="top">
-      <img className="hero-image" src={asset(`${PHASE2}/hero-aerial.jpg`)} alt={tr("卓能河畔轩整体改造效果图")} fetchPriority="high" />
+      <img className="hero-image" src={asset(`${PHASE2}/hero-riverside.jpg`)} alt={tr("卓能河畔轩水岸实景")} fetchPriority="high" />
       <div className="hero-veil" />
       <div className="hero-line hero-line-a" /><div className="hero-line hero-line-b" />
       <div className="hero-copy">
@@ -350,7 +350,7 @@ function Hero() {
         <div className="hero-rule" />
         <h2>{tr("轻享杭州的丰盈生活")}</h2>
         <p className="hero-meta">{tr("临平崇贤 · 滨水生活 · 建面约65-138㎡多元户型")}</p>
-        <span className="visual-status">{tr("整体改造效果图")}</span>
+        <span className="visual-status">{tr("水岸实景")}</span>
       </div>
       <a className="hero-scroll" href="#heritage"><span>SCROLL</span><ArrowDown size={17} /></a>
       <div className="hero-side-word" aria-hidden="true">RIVERSIDE</div>
@@ -1143,7 +1143,9 @@ function SalesCrm() {
       if (!meResponse.ok) throw new Error(me.message || "销售账号加载失败。");
       if (!leadsResponse.ok) throw new Error(data.message || "客户列表加载失败。");
       setSales(me.sales);
-      setLeads(data.leads || []);
+      const nextLeads = data.leads || [];
+      setLeads(nextLeads);
+      setDrafts(Object.fromEntries(nextLeads.map((lead) => [lead.id, { status: lead.status, note: lead.latest_note || "" }])));
       setStatus("ready");
     } catch (error) { setStatus("error"); setMessage(error.message); }
   }, []);
@@ -1179,9 +1181,8 @@ function SalesCrm() {
       const response = await fetch(`${CRM_ENDPOINT}/leads/${lead.id}`, { method: "PATCH", headers: { "content-type": "application/json", authorization: `Bearer ${salesToken}` }, body: JSON.stringify(draft) });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.message || "跟进保存失败。");
-      setDrafts({ ...drafts, [lead.id]: { status: draft.status, note: "" } });
-      setMessage("跟进已保存。");
       await load(salesToken);
+      setMessage("跟进已保存，备注已同步。");
     } catch (error) { setMessage(error.message); }
   };
 
@@ -1199,7 +1200,7 @@ function SalesCrm() {
     return <main className="admin-login-page"><section className="admin-login-card"><p>CHEUK NANG RIVERSIDE</p><h1>销售客户后台</h1><span>仅展示分配给当前账号的客户；邀请码不能用于登录。</span>{status === "loading" ? <div className="admin-loading">正在连接 CRM 数据库…</div> : <form onSubmit={login}><label><span>登录名</span><input value={loginName} onChange={(event) => setLoginName(event.target.value)} autoComplete="username" required /></label><label><span>密码</span><input type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" required /></label>{message && <strong role="alert">{message}</strong>}<button type="submit" disabled={status === "submitting"}>{status === "submitting" ? "正在登录" : "进入客户后台"}</button></form>}</section></main>;
   }
 
-  return <main className="admin-page"><header className="admin-topbar"><Brand light /><button type="button" onClick={() => { setSalesToken(""); setStatus("login"); }}>退出登录</button></header><section className="admin-shell"><div className="admin-heading"><div><p>SALES CRM</p><h1>{sales?.displayName}的客户</h1><span>邀请码只用于识别来源，不可作为后台登录凭证。</span></div><div className="admin-actions"><button type="button" onClick={() => load(salesToken)}>刷新</button></div></div><section className="crm-panel crm-qr-panel"><div><h2>我的官方专属二维码</h2><p>请将此二维码或官方专属链接分享给客户。客户扫码后提交资料，系统才会自动归属到你名下。</p>{sales?.inviteUrl ? <code>{sales.inviteUrl}</code> : <strong>邀请签名尚未配置，暂不能生成可用二维码。</strong>}<div className="admin-actions"><button type="button" onClick={downloadQrCard} disabled={!qrCardUrl}>下载专属二维码</button></div>{qrMessage && <p className="crm-message" role="status">{qrMessage}</p>}</div>{qrCardUrl && <img src={qrCardUrl} alt={`${sales.displayName}的卓能河畔轩官方专属二维码`} />}</section>{message && <p className="crm-message" role="status">{message}</p>}<section className="crm-panel"><div className="admin-table-wrap"><table><thead><tr><th>客户</th><th>手机号</th><th>当前状态</th><th>跟进状态</th><th>跟进备注</th><th>操作</th></tr></thead><tbody>{leads.map((lead) => { const draft = drafts[lead.id] || { status: lead.status, note: "" }; return <tr key={lead.id}><td>{lead.name}</td><td><a href={`tel:${lead.phone}`}>{lead.phone}</a></td><td>{crmStatuses.find(([value]) => value === lead.status)?.[1] || lead.status}</td><td><select value={draft.status} onChange={(event) => setDrafts({ ...drafts, [lead.id]: { ...draft, status: event.target.value } })}>{crmStatuses.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></td><td><input value={draft.note} onChange={(event) => setDrafts({ ...drafts, [lead.id]: { ...draft, note: event.target.value } })} placeholder="本次跟进内容" /></td><td><button type="button" onClick={() => saveFollowup(lead)}>保存</button></td></tr>; })}</tbody></table></div></section></section></main>;
+  return <main className="admin-page"><header className="admin-topbar"><Brand light /><button type="button" onClick={() => { setSalesToken(""); setStatus("login"); }}>退出登录</button></header><section className="admin-shell"><div className="admin-heading"><div><p>SALES CRM</p><h1>{sales?.displayName}的客户</h1><span>邀请码只用于识别来源，不可作为后台登录凭证。</span></div><div className="admin-actions"><button type="button" onClick={() => load(salesToken)}>刷新</button></div></div><section className="crm-panel crm-qr-panel"><div><h2>我的官方专属二维码</h2><p>请将此二维码或官方专属链接分享给客户。客户扫码后提交资料，系统才会自动归属到你名下。</p>{sales?.inviteUrl ? <code>{sales.inviteUrl}</code> : <strong>邀请签名尚未配置，暂不能生成可用二维码。</strong>}<div className="admin-actions"><button type="button" onClick={downloadQrCard} disabled={!qrCardUrl}>下载专属二维码</button></div>{qrMessage && <p className="crm-message" role="status">{qrMessage}</p>}</div>{qrCardUrl && <img src={qrCardUrl} alt={`${sales.displayName}的卓能河畔轩官方专属二维码`} />}</section>{message && <p className="crm-message" role="status">{message}</p>}<section className="crm-panel crm-leads-panel"><div className="crm-leads-heading"><div><p>MY CLIENTS</p><h2>客户跟进</h2></div><span>{leads.length} 位客户</span></div>{leads.length ? <div className="crm-leads-grid">{leads.map((lead) => { const draft = drafts[lead.id] || { status: lead.status, note: lead.latest_note || "" }; const currentStatus = crmStatuses.find(([value]) => value === lead.status)?.[1] || lead.status; return <article className="crm-lead-card" key={lead.id}><header><div><small>客户</small><h3>{lead.name}</h3></div><a href={`tel:${lead.phone}`}>{lead.phone}</a></header><div className="crm-lead-summary"><span><small>当前状态</small><strong>{currentStatus}</strong></span>{lead.last_followup_at && <span><small>最近跟进</small><strong>{lead.last_followup_at}</strong></span>}</div><div className="crm-lead-controls"><label><span>跟进状态</span><select value={draft.status} onChange={(event) => setDrafts({ ...drafts, [lead.id]: { ...draft, status: event.target.value } })}>{crmStatuses.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label><label className="crm-lead-note"><span>跟进备注</span><textarea rows="3" value={draft.note} onChange={(event) => setDrafts({ ...drafts, [lead.id]: { ...draft, note: event.target.value } })} placeholder="填写本次跟进内容" /></label><button type="button" onClick={() => saveFollowup(lead)}>保存跟进</button></div></article>; })}</div> : <p className="crm-leads-empty">暂时还没有归属到你名下的客户。</p>}</section></section></main>;
 }
 
 function CrmHostRedirect() {

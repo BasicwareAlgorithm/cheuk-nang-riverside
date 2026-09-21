@@ -21,7 +21,7 @@ test("phase 2 homepage uses reviewed facts and status-qualified claims", async (
 
 test("phase 2 source assets required by the homepage are local", async () => {
   const assets = [
-    "hero-aerial.jpg", "arrival-gate.jpg", "clubhouse-lawn.jpg", "playground.jpg",
+    "hero-riverside.jpg", "arrival-gate.jpg", "clubhouse-lawn.jpg", "playground.jpg",
     "sparse-grove.jpg", "location-map.jpg", "group-works-hk.jpg", "group-works-regional.jpg",
     "landscape-masterplan.jpg", "commercial-street.jpg", "north-entrance.jpg", "east-entrance.jpg",
     "liuguang-courtyard.jpg", "art-screen.jpg", "liuguang-island.jpg", "sales-centre-plan.jpg",
@@ -83,15 +83,25 @@ test("appointment submissions use the same-origin Pages proxy", async () => {
   assert.doesNotMatch(app, /CRM_WORKER_ORIGIN\}\/api\/reservations/);
 });
 
+test("sales CRM restores saved notes in a responsive customer card layout", async () => {
+  const app = await readFile(path.join(root, "src", "App.jsx"), "utf8");
+
+  assert.match(app, /note: lead\.latest_note \|\| ""/);
+  assert.match(app, /className="crm-lead-card"/);
+  assert.match(app, /className="crm-lead-note"/);
+  assert.match(app, /<textarea rows="3"/);
+  assert.match(app, /跟进已保存，备注已同步。/);
+});
+
 test("homepage exposes a share title, description and phase 2 cover image", async () => {
   const app = await readFile(path.join(root, "src", "App.jsx"), "utf8");
   const html = await readFile(path.join(root, "index.html"), "utf8");
 
-  assert.match(app, /className="hero-image" src=\{asset\(`\$\{PHASE2\}\/hero-aerial\.jpg`\)\}/);
-  assert.match(app, /tr\("卓能河畔轩整体改造效果图"\)/);
-  assert.match(app, /tr\("整体改造效果图"\)/);
+  assert.match(app, /className="hero-image" src=\{asset\(`\$\{PHASE2\}\/hero-riverside\.jpg`\)\}/);
+  assert.match(app, /tr\("卓能河畔轩水岸实景"\)/);
+  assert.match(app, /tr\("水岸实景"\)/);
   assert.match(html, /property="og:title"/);
   assert.match(html, /property="og:description"/);
-  assert.match(html, /property="og:image" content="https:\/\/www\.cheuknangriverside\.com\/assets\/phase2\/hero-aerial\.jpg"/);
+  assert.match(html, /property="og:image" content="https:\/\/www\.cheuknangriverside\.com\/assets\/phase2\/hero-riverside\.jpg"/);
   assert.match(html, /name="twitter:card" content="summary_large_image"/);
 });

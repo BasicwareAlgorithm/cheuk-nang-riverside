@@ -195,7 +195,7 @@ async function requireCrmSchema(env) {
 
 async function listLeads(env, salesId = null) {
   const condition = salesId ? "WHERE c.sales_id = ?" : "";
-  const statement = env.DB.prepare(`SELECT c.id, c.name, c.phone, c.status, c.sales_id, c.first_assigned_at, c.ownership_locked_until, c.last_consulted_at, c.created_at, s.display_name AS sales_name FROM crm_customers c LEFT JOIN crm_sales_accounts s ON c.sales_id = s.id ${condition} ORDER BY c.last_consulted_at DESC LIMIT 1000`);
+  const statement = env.DB.prepare(`SELECT c.id, c.name, c.phone, c.status, c.sales_id, c.first_assigned_at, c.ownership_locked_until, c.last_consulted_at, c.created_at, s.display_name AS sales_name, (SELECT f.note FROM crm_followups f WHERE f.customer_id = c.id ORDER BY f.id DESC LIMIT 1) AS latest_note, (SELECT f.created_at FROM crm_followups f WHERE f.customer_id = c.id ORDER BY f.id DESC LIMIT 1) AS last_followup_at FROM crm_customers c LEFT JOIN crm_sales_accounts s ON c.sales_id = s.id ${condition} ORDER BY c.last_consulted_at DESC LIMIT 1000`);
   const records = salesId ? await statement.bind(salesId).all() : await statement.all();
   return records.results || [];
 }

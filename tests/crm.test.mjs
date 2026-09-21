@@ -124,6 +124,7 @@ test("password hashing stays within the Cloudflare Workers PBKDF2 limit", async 
 
 function createCrmApiD1() {
   const sales = [];
+  const followups = [];
   const customers = [
     { id: 1, name: "客户 A", phone: "13800138000", sales_id: 1, status: "new", last_consulted_at: "2026-09-18 10:00:00" },
     { id: 2, name: "客户 B", phone: "13900139000", sales_id: 2, status: "new", last_consulted_at: "2026-09-18 10:00:00" },
@@ -140,6 +141,15 @@ function createCrmApiD1() {
             sales.push(account);
             return { success: true, meta: { last_row_id: account.id } };
           }
+          if (sql.startsWith("UPDATE crm_customers SET status")) {
+            const customer = customers.find((item) => item.id === values[1]);
+            customer.status = values[0];
+            return { success: true };
+          }
+          if (sql.startsWith("INSERT INTO crm_followups")) {
+            followups.push({ id: followups.length + 1, customer_id: values[0], sales_id: values[1], status: values[2], note: values[3], created_at: "2026-09-21 18:30:00" });
+            return { success: true };
+          }
           if (sql.startsWith("INSERT INTO crm_audit_logs")) return { success: true };
           throw new Error(`Unexpected run query: ${sql}`);
         },
@@ -154,7 +164,10 @@ function createCrmApiD1() {
           if (sql.startsWith("SELECT id, display_name, login_name, invite_code, active, invite_expires_at")) return { results: sales };
           if (sql.startsWith("SELECT c.id, c.name, c.phone")) {
             const visible = values.length ? customers.filter((customer) => customer.sales_id === values[0]) : customers;
-            return { results: visible.map((customer) => ({ ...customer, sales_name: sales.find((account) => account.id === customer.sales_id)?.display_name || null })) };
+            return { results: visible.map((customer) => {
+              const latest = followups.filter((followup) => followup.customer_id === customer.id).at(-1);
+              return { ...customer, sales_name: sales.find((account) => account.id === customer.sales_id)?.display_name || null, latest_note: latest?.note || null, last_followup_at: latest?.created_at || null };
+            }) };
           }
           throw new Error(`Unexpected all query: ${sql}`);
         },
@@ -191,6 +204,19 @@ test("sales API only returns the signed-in sales person's own customers", async 
   const ownLeads = await handleCrmApi(new Request("https://example.test/api/crm/leads", { headers: { cookie } }), env, async () => false);
   assert.equal(ownLeads.status, 200);
   assert.deepEqual((await ownLeads.json()).leads.map((lead) => lead.id), [1]);
+
+  const followup = await handleCrmApi(new Request("https://example.test/api/crm/leads/1", {
+    method: "PATCH",
+    headers: { cookie, "content-type": "application/json" },
+    body: JSON.stringify({ status: "contacted", note: "客户希望周末再次联系" }),
+  }), env, async () => false);
+  assert.equal(followup.status, 200);
+
+  const refreshedLeads = await handleCrmApi(new Request("https://example.test/api/crm/leads", { headers: { cookie } }), env, async () => false);
+  const [refreshedLead] = (await refreshedLeads.json()).leads;
+  assert.equal(refreshedLead.status, "contacted");
+  assert.equal(refreshedLead.latest_note, "客户希望周末再次联系");
+  assert.equal(refreshedLead.last_followup_at, "2026-09-21 18:30:00");
 
   const otherLead = await handleCrmApi(new Request("https://example.test/api/crm/leads/2", {
     method: "PATCH",
