@@ -1,0 +1,52 @@
+name: Audit artifact storage
+
+on:
+  schedule:
+    - cron: "0 1 * * 1"
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  audit:
+    name: Check active artifact storage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Report unexpected or oversized artifacts
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const artifacts = await github.paginate(
+              github.rest.actions.listArtifactsForRepo,
+              { ...context.repo, per_page: 100 },
+              (response) => response.data.artifacts,
+            );
+            const activeArtifacts = artifacts.filter((artifact) => !artifact.expired);
+            const maxArtifactBytes = 200 * 1024 * 1024;
+            const unexpectedArtifacts = activeArtifacts.filter((artifact) => artifact.name !== "github-pages");
+            const oversizedArtifacts = activeArtifacts.filter((artifact) => artifact.size_in_bytes > maxArtifactBytes);
+            const totalBytes = activeArtifacts.reduce((total, artifact) => total + artifact.size_in_bytes, 0);
+
+            await core.summary
+              .addHeading("GitHub Actions artifact audit")
+              .addTable([
+                [{ data: "Active artifacts", header: true }, { data: String(activeArtifacts.length) }],
+                [{ data: "Current Pages artifacts", header: true }, { data: String(activeArtifacts.filter((artifact) => artifact.name === "github-pages").length) }],
+                [{ data: "Current artifact storage", header: true }, { data: `${(totalBytes / 1024 / 1024).toFixed(1)} MB` }],
+                [{ data: "Threshold per artifact", header: true }, { data: "200 MB" }],
+              ])
+              .write();
+
+            const findings = [
+              ...unexpectedArtifacts.map((artifact) => `Unexpected active artifact: ${artifact.name} (${artifact.id}, ${(artifact.size_in_bytes / 1024 / 1024).toFixed(1)} MB)`),
+              ...oversizedArtifacts.map((artifact) => `Oversized active artifact: ${artifact.name} (${artifact.id}, ${(artifact.size_in_bytes / 1024 / 1024).toFixed(1)} MB)`),
+            ];
+
+            if (findings.length) {
+              for (const finding of findings) core.error(finding);
+              throw new Error(`Artifact storage audit failed with ${findings.length} finding(s).`);
+            }
+
+            core.info("Artifact storage audit passed.");
