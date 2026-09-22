@@ -51,7 +51,7 @@ const english = {
   "实力港企 卓能集团首献杭州": "A Hong Kong Legacy, Debuting in Hangzhou",
   "卓能（控股）有限公司成立于1963年；1988年由赵世曾博士收购并更名为卓能。集团专注物业发展与投资，业务布局香港、中国内地、澳门及马来西亚。": "Cheuk Nang (Holdings) Limited was established in 1963 and renamed Cheuk Nang after its acquisition by Dr Cecil Chao in 1988. The group focuses on property development and investment across Hong Kong, Mainland China, Macau and Malaysia.",
   "企业成立": "established", "港交所股份代号": "HKEX stock code", "主要市场布局": "principal markets",
-  "沿时间长河 稳健前行": "A steady course through time", "从建筑专业起点到跨区域物业发展，时间线梳理卓能重要人物与企业历程。个人经历与公司事件分别标注，避免混为同一口径。": "From an architectural foundation to property development across multiple markets, this timeline distinguishes personal milestones from corporate events.",
+  "沿时间长河 稳健前行": "A steady course through time", "从建筑专业起点到跨区域物业发展，时间线梳理卓能重要人物与企业历程。": "From an architectural foundation to property development across multiple markets, this timeline traces key people and milestones in Cheuk Nang's corporate history.",
   "专业起点": "Professional foundation", "赵世曾博士于英国杜伦大学建筑系毕业。": "Dr Cecil Chao graduated from the Department of Architecture at Durham University in the United Kingdom.",
   "建筑实践": "Architectural practice", "加入香港政府建筑署担任建筑师。": "Joined the Hong Kong Government's Architectural Services Department as an architect.",
   "企业前身": "Company origins", "公司前身远东羊毛纤维有限公司成立。": "The company's predecessor, Far East Wool Fibre Limited, was established.",

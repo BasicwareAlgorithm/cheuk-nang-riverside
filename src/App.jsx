@@ -393,7 +393,7 @@ function Timeline() {
   return (
     <section className="timeline paper" id="timeline">
       <div className="shell timeline-shell">
-        <SectionTitle index="01—08" en="MILESTONES" title={tr("沿时间长河 稳健前行")} intro={tr("从建筑专业起点到跨区域物业发展，时间线梳理卓能重要人物与企业历程。个人经历与公司事件分别标注，避免混为同一口径。")} />
+        <SectionTitle index="01—08" en="MILESTONES" title={tr("沿时间长河 稳健前行")} intro={tr("从建筑专业起点到跨区域物业发展，时间线梳理卓能重要人物与企业历程。")} />
         <ol className="timeline-list">
           {milestones.map((item, index) => (
             <li className={item.featured ? "is-featured" : ""} key={item.year}>
