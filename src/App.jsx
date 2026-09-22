@@ -417,7 +417,7 @@ function GroupFootprint() {
   return (
     <section className="group-footprint paper" id="group-footprint">
       <div className="shell">
-        <SectionTitle index="01B" en="SELECTED PROJECTS" title={tr("从香港出发 布局多元市场")} intro={tr("代表项目按照二期案场说辞与楼书整理，作为集团开发经验的简要索引。")} />
+        <SectionTitle index="01B" en="SELECTED PROJECTS" title={tr("从香港出发 布局多元市场")} />
         <div className="business-grid">
           {groupBusiness.map(([title, copy], index) => (
             <Reveal delay={index * 50} key={title}><span>0{index + 1}</span><h3>{tr(title)}</h3><p>{tr(copy)}</p></Reveal>
@@ -434,7 +434,6 @@ function GroupFootprint() {
             </Reveal>
           ))}
         </div>
-        <p className="source-note">{tr("项目名称与区域来自二期项目资料，具体物业状态及最新用途以卓能集团公开信息为准。")}</p>
       </div>
     </section>
   );
